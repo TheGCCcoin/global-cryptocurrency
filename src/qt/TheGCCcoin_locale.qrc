@@ -1,0 +1,20 @@
+<!DOCTYPE RCC><RCC version="1.0">
+    <qresource prefix="/translations">
+        <file alias="bg">locale/TheGCCcoin_bg.qm</file>
+        <file alias="de">locale/TheGCCcoin_de.qm</file>
+        <file alias="en">locale/TheGCCcoin_en.qm</file>
+        <file alias="es">locale/TheGCCcoin_es.qm</file>
+        <file alias="fi">locale/TheGCCcoin_fi.qm</file>
+        <file alias="fr">locale/TheGCCcoin_fr.qm</file>
+        <file alias="it">locale/TheGCCcoin_it.qm</file>
+        <file alias="ja">locale/TheGCCcoin_ja.qm</file>
+        <file alias="pl">locale/TheGCCcoin_pl.qm</file>
+        <file alias="pt">locale/TheGCCcoin_pt.qm</file>
+        <file alias="ru">locale/TheGCCcoin_ru.qm</file>
+        <file alias="sk">locale/TheGCCcoin_sk.qm</file>
+        <file alias="sv">locale/TheGCCcoin_sv.qm</file>
+        <file alias="vi">locale/TheGCCcoin_vi.qm</file>
+        <file alias="zh_CN">locale/TheGCCcoin_zh_CN.qm</file>
+        <file alias="zh_TW">locale/TheGCCcoin_zh_TW.qm</file>
+    </qresource>
+</RCC>

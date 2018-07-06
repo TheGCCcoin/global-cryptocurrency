@@ -1,0 +1,12 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=GCC
+Comment=GCC P2P Cryptocurrency
+Comment[fr]=GCC, monnaie virtuelle cryptographique pair à pair
+Comment[tr]=GCC, eşten eşe kriptografik sanal para birimi
+Exec=TheGCCcoin-qt %u
+Terminal=false
+Type=Application
+Icon=TheGCCcoin128
+MimeType=x-scheme-handler/TheGCCcoin;
+Categories=Office;Finance;

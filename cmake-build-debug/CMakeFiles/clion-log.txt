@@ -1,0 +1,4 @@
+/media/srv-dev0/Downloads/clion-2017.2.2/bin/cmake/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/user/src5/gcc/thegcc-dash
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/user/src5/gcc/thegcc-dash/cmake-build-debug

@@ -1,0 +1,6 @@
+usr/local/bin/TheGCCcoin-qt usr/bin
+share/pixmaps/TheGCCcoin32.xpm usr/share/pixmaps
+share/pixmaps/TheGCCcoin16.xpm usr/share/pixmaps
+share/pixmaps/TheGCCcoin128.png usr/share/pixmaps
+debian/TheGCCcoin-qt.desktop usr/share/applications
+debian/TheGCCcoin-qt.protocol usr/share/kde4/services/

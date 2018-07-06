@@ -1,0 +1,67 @@
+#!/bin/bash
+#
+#  TheGCCcoind The GCC Core server.
+#
+#
+# chkconfig: 345 80 20
+# description: TheGCCcoind
+# processname: TheGCCcoind
+#
+
+# Source function library.
+. /etc/init.d/functions
+
+# you can override defaults in /etc/sysconfig/TheGCCcoind, see below
+if [ -f /etc/sysconfig/TheGCCcoind ]; then
+        . /etc/sysconfig/TheGCCcoind
+fi
+
+RETVAL=0
+
+prog=TheGCCcoind
+# you can override the lockfile via BITCOIND_LOCKFILE in /etc/sysconfig/TheGCCcoind
+lockfile=${BITCOIND_LOCKFILE-/var/lock/subsys/TheGCCcoind}
+
+# TheGCCcoind defaults to /usr/bin/TheGCCcoind, override with BITCOIND_BIN
+TheGCCcoind=${BITCOIND_BIN-/usr/bin/TheGCCcoind}
+
+# TheGCCcoind opts default to -disablewallet, override with BITCOIND_OPTS
+TheGCCcoind_opts=${BITCOIND_OPTS--disablewallet}
+
+start() {
+    echo -n $"Starting $prog: "
+    daemon $DAEMONOPTS $TheGCCcoind $TheGCCcoind_opts
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && touch $lockfile
+    return $RETVAL
+}
+
+stop() {
+    echo -n $"Stopping $prog: "
+    killproc $prog
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && rm -f $lockfile
+    return $RETVAL
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status $prog
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: service $prog {start|stop|status|restart}"
+        exit 1
+        ;;
+esac

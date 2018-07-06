@@ -1,0 +1,7 @@
+[main]
+host = https://www.transifex.com
+
+[TheGCCcoin.qt-translation-012x]
+file_filter = src/qt/locale/TheGCCcoin_<lang>.ts
+source_file = src/qt/locale/TheGCCcoin_en.ts
+source_lang = en
