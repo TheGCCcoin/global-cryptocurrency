@@ -11,8 +11,8 @@ The following are some helpful notes on how to run GCC on your native platform.
 
 Unpack the files into a directory and run:
 
-- `bin/bitcoin-qt` (GUI) or
-- `bin/bitcoind` (headless)
+- `bin/TheGCCcoin-qt` (GUI) or
+- `bin/TheGCCcoind` (headless)
 
 ### Windows
 
@@ -26,8 +26,8 @@ Drag GCC-Qt to your applications folder, and then run GCC-Qt.
 
 * See the [GCC documentation](https://thegcccoinpay.atlassian.net/wiki/display/DOC)
 for help and more information.
-* Ask for help on [#thegcccoinpay](http://webchat.freenode.net?channels=thegcccoinpay) on Freenode. If you don't have an IRC client use [webchat here](http://webchat.freenode.net?channels=thegcccoinpay).
-* Ask for help on the [GCCTalk](https://TheGCCcointalk.org/) forums.
+* Ask for help on [GCC Nation Discord](http://TheGCCcoinchat.org)
+* Ask for help on the [GCC Forum](https://TheGCCcoin.org/forum)
 
 Building
 ---------------------
@@ -44,30 +44,32 @@ Development
 The GCC Core repo's [root README](/README.md) contains relevant information on the development process and automated testing.
 
 - [Developer Notes](developer-notes.md)
-- [Multiwallet Qt Development](multiwallet-qt.md)
 - [Release Notes](release-notes.md)
 - [Release Process](release-process.md)
 - Source Code Documentation ***TODO***
 - [Translation Process](translation_process.md)
 - [Translation Strings Policy](translation_strings_policy.md)
-- [Unit Tests](unit-tests.md)
+- [Travis CI](travis-ci.md)
 - [Unauthenticated REST Interface](REST-interface.md)
 - [Shared Libraries](shared-libraries.md)
 - [BIPS](bips.md)
 - [Dnsseed Policy](dnsseed-policy.md)
+- [Benchmarking](benchmarking.md)
 
 ### Resources
-* Discuss on the [GCCTalk](https://TheGCCcointalk.org/) forums, in the Development & Technical Discussion board.
-* Discuss on [#thegcccoinpay](http://webchat.freenode.net/?channels=thegcccoinpay) on Freenode. If you don't have an IRC client use [webchat here](http://webchat.freenode.net/?channels=thegcccoinpay).
+* Discuss on the [GCC Forum](https://TheGCCcoin.org/forum), in the Development & Technical Discussion board.
+* Discuss on [GCC Nation Discord](http://TheGCCcoinchat.org)
 
 ### Miscellaneous
 - [Assets Attribution](assets-attribution.md)
 - [Files](files.md)
+- [Reduce Traffic](reduce-traffic.md)
 - [Tor Support](tor.md)
 - [Init Scripts (systemd/upstart/openrc)](init.md)
+- [ZMQ](zmq.md)
 
 License
 ---------------------
-Distributed under the [MIT software license](http://www.opensource.org/licenses/mit-license.php).
+Distributed under the [MIT software license](/COPYING).
 This product includes software developed by the OpenSSL Project for use in the [OpenSSL Toolkit](https://www.openssl.org/). This product includes
 cryptographic software written by Eric Young ([eay@cryptsoft.com](mailto:eay@cryptsoft.com)), and UPnP software written by Thomas Bernard.

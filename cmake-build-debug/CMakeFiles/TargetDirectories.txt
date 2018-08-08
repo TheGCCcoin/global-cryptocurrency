@@ -1,5 +1,3 @@
-/home/user/src5/gcc/thegcc-dash/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/user/src5/gcc/thegcc-dash/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/user/src5/gcc/thegcc-dash/cmake-build-debug/CMakeFiles/bitcoind.dir
-/home/user/src5/gcc/thegcc-dash/cmake-build-debug/CMakeFiles/thegcc-qt-b.dir
-/home/user/src5/gcc/thegcc-dash/cmake-build-debug/CMakeFiles/thegcc-b.dir
+/home/vv/src/gcc/thegcc-dash-v12.3/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/vv/src/gcc/thegcc-dash-v12.3/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/vv/src/gcc/thegcc-dash-v12.3/cmake-build-debug/CMakeFiles/TheGCCcoin.dir

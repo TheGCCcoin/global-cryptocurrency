@@ -8,6 +8,7 @@
         <file alias="fr">locale/TheGCCcoin_fr.qm</file>
         <file alias="it">locale/TheGCCcoin_it.qm</file>
         <file alias="ja">locale/TheGCCcoin_ja.qm</file>
+        <file alias="nl">locale/TheGCCcoin_nl.qm</file>
         <file alias="pl">locale/TheGCCcoin_pl.qm</file>
         <file alias="pt">locale/TheGCCcoin_pt.qm</file>
         <file alias="ru">locale/TheGCCcoin_ru.qm</file>

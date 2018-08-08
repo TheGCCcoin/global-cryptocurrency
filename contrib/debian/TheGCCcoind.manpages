@@ -1,3 +1,2 @@
-debian/manpages/TheGCCcoind.1
-debian/manpages/TheGCCcoin.conf.5
-debian/manpages/TheGCCcoin-cli.1
+doc/man/TheGCCcoind.1
+doc/man/TheGCCcoin-cli.1

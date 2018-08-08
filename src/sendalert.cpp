@@ -23,14 +23,14 @@ If you screw up something, send another alert with nCancel set to cancel
 the bad alert.
 */
 
-void ThreadSendAlert()
+void ThreadSendAlert(CConnman& connman)
 {
-    if (!mapArgs.count("-sendalert") && !mapArgs.count("-printalert"))
+    if (!IsArgSet("-sendalert") && !IsArgSet("-printalert"))
         return;
 
     // Wait one minute so we get well connected. If we only need to print
     // but not to broadcast - do this right away.
-    if (mapArgs.count("-sendalert"))
+    if (IsArgSet("-sendalert"))
         MilliSleep(60*1000);
 
     //
@@ -42,8 +42,8 @@ void ThreadSendAlert()
     // Nodes never save alerts to disk, they are in-memory-only.
     //
     CAlert alert;
-    alert.nRelayUntil   = GetTime() + 15 * 60;
-    alert.nExpiration   = GetTime() + 30 * 60 * 60;
+    alert.nRelayUntil   = GetAdjustedTime() + 15 * 60;
+    alert.nExpiration   = GetAdjustedTime() + 30 * 60 * 60;
     alert.nID           = 1;  // keep track of alert IDs somewhere
     alert.nCancel       = 0;   // cancels previous messages up to this ID number
 
@@ -89,9 +89,9 @@ void ThreadSendAlert()
     printf("vchSig=%s\n", HexStr(alert2.vchSig).c_str());
 
     // Confirm
-    if (!mapArgs.count("-sendalert"))
+    if (!IsArgSet("-sendalert"))
         return;
-    while (vNodes.empty() && !ShutdownRequested())
+    while (connman.GetNodeCount(CConnman::CONNECTIONS_ALL) == 0 && !ShutdownRequested())
         MilliSleep(500);
     if (ShutdownRequested())
         return;
@@ -100,15 +100,13 @@ void ThreadSendAlert()
     printf("ThreadSendAlert() : Sending alert\n");
     int nSent = 0;
     {
-        LOCK(cs_vNodes);
-        BOOST_FOREACH(CNode* pnode, vNodes)
-        {
-            if (alert2.RelayTo(pnode))
+        connman.ForEachNode([&alert2, &connman, &nSent](CNode* pnode) {
+            if (alert2.RelayTo(pnode, connman))
             {
                 printf("ThreadSendAlert() : Sent alert to %s\n", pnode->addr.ToString().c_str());
                 nSent++;
             }
-        }
+        });
     }
     printf("ThreadSendAlert() : Alert sent to %d nodes\n", nSent);
 }

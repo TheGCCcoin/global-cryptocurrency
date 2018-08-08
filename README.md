@@ -1,7 +1,7 @@
-GCC Core staging tree 0.12.1
+GCC Core staging tree 0.12.3
 ===============================
 
-`master:` [![Build Status](https://travis-ci.org/thegcccoinpay/TheGCCcoin.svg?branch=master)](https://travis-ci.org/thegcccoinpay/TheGCCcoin) `v0.12.0.x:` [![Build Status](https://travis-ci.org/thegcccoinpay/TheGCCcoin.svg?branch=v0.12.0.x)](https://travis-ci.org/thegcccoinpay/TheGCCcoin/branches) `v0.12.1.x:` [![Build Status](https://travis-ci.org/thegcccoinpay/TheGCCcoin.svg?branch=v0.12.1.x)](https://travis-ci.org/thegcccoinpay/TheGCCcoin/branches)
+`master:` [![Build Status](https://travis-ci.org/thegcccoinpay/TheGCCcoin.svg?branch=master)](https://travis-ci.org/thegcccoinpay/TheGCCcoin) `develop:` [![Build Status](https://travis-ci.org/thegcccoinpay/TheGCCcoin.svg?branch=develop)](https://travis-ci.org/thegcccoinpay/TheGCCcoin/branches)
 
 https://www.TheGCCcoin.org
 
@@ -9,7 +9,7 @@ https://www.TheGCCcoin.org
 What is GCC?
 ----------------
 
-GCC is an experimental new digital currency that enables anonymous, instant
+GCC is an experimental digital currency that enables anonymous, instant
 payments to anyone, anywhere in the world. GCC uses peer-to-peer technology
 to operate with no central authority: managing transactions and issuing money
 are carried out collectively by the network. GCC Core is the name of the open
@@ -29,7 +29,7 @@ Development Process
 -------------------
 
 The `master` branch is meant to be stable. Development is normally done in separate branches.
-[Tags](https://github.com/thegcccoinpay/TheGCCcoin/tags) are created to indicate new official,
+[Tags](https://github.com/TheGCCcoin/GCC/tags) are created to indicate new official,
 stable release versions of GCC Core.
 
 The contribution workflow is described in [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -44,16 +44,16 @@ lots of money.
 
 ### Automated Testing
 
-Developers are strongly encouraged to write [unit tests](/doc/unit-tests.md) for new code, and to
+Developers are strongly encouraged to write [unit tests](src/test/README.md) for new code, and to
 submit new unit tests for old code. Unit tests can be compiled and run
-(assuming they weren't disabled in configure) with: `make check`
+(assuming they weren't disabled in configure) with: `make check`. Further details on running
+and extending unit tests can be found in [/src/test/README.md](/src/test/README.md).
 
 There are also [regression and integration tests](/qa) of the RPC interface, written
 in Python, that are run automatically on the build server.
 These tests can be run (if the [test dependencies](/qa) are installed) with: `qa/pull-tester/rpc-tests.py`
 
-The Travis CI system makes sure that every pull request is built for Windows
-and Linux, OS X, and that unit and sanity tests are automatically run.
+The Travis CI system makes sure that every pull request is built for Windows, Linux, and OS X, and that unit/sanity tests are run automatically.
 
 ### Manual Quality Assurance (QA) Testing
 
