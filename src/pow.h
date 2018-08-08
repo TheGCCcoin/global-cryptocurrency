@@ -8,13 +8,24 @@
 
 #include "consensus/params.h"
 
+// g.0 pos include - todo: review [
+
+#include "thegcc/pos.h"
+
+// g.0 pos include - todo: review ]
+
 #include <stdint.h>
 
 class CBlockHeader;
 class CBlockIndex;
 class uint256;
 
-unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params&);
+// g.1.1 fix pow/pos [
+
+//unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params&);
+
+// g.1.1 fix pow/pos ]
+
 unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nFirstBlockTime, const Consensus::Params&);
 
 

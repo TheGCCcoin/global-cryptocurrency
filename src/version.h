@@ -6,6 +6,8 @@
 #ifndef BITCOIN_VERSION_H
 #define BITCOIN_VERSION_H
 
+// network protocol versioning [
+
 /**
  * network protocol versioning
  */
@@ -19,8 +21,13 @@ static const int INIT_PROTO_VERSION = 209;
 //! In this version, 'getheaders' was introduced.
 static const int GETHEADERS_VERSION = 70077;
 
+// p1.1 - MIN_PEER_PROTO_VERSION = 63010 [
+
 //! disconnect from peers older than this proto version
-static const int MIN_PEER_PROTO_VERSION = 70208;
+//static const int MIN_PEER_PROTO_VERSION = 70208;
+static const int MIN_PEER_PROTO_VERSION = 63010;
+
+// p1.1 - MIN_PEER_PROTO_VERSION = 63010 ]
 
 //! nTime field added to CAddress, starting with this version;
 //! if possible, avoid requesting addresses nodes older than this
@@ -43,5 +50,24 @@ static const int DIP0001_PROTOCOL_VERSION = 70208;
 
 //! short-id-based block download starts with this version
 static const int SHORT_IDS_BLOCKS_VERSION = 70209;
+
+// o.1.1 old gcc OLD_PROTO_HEADERS_VERSION [
+
+static const int OLD_PROTO_HEADERS_VERSION = 70000;
+
+// o.1.1 old gcc OLD_PROTO_HEADERS_VERSION ]
+// o.1.2 old gcc OLD_CMD_HEADERS_VERSION [
+
+static const int OLD_CMD_HEADERS_VERSION = 69999;
+
+// o.1.2 old gcc OLD_CMD_HEADERS_VERSION ]
+
+// f.5.2 skip old blocks THEGCC_V1_BLOCK_VERSION [
+
+static const int THEGCC_V1_BLOCK_VERSION = 6;
+
+// f.5.2 skip old blocks THEGCC_V1_BLOCK_VERSION ]
+
+// network protocol versioning ]
 
 #endif // BITCOIN_VERSION_H

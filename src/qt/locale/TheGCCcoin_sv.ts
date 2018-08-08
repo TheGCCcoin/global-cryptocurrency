@@ -1238,7 +1238,7 @@ https://www.transifex.com/projects/p/TheGCCcoin/</translation>
         <translation>Mängd och omgångar:</translation>
     </message>
     <message>
-        <source>0 TheGCCcoin / 0 Rounds</source>
+        <source>0 TheGCC / 0 Rounds</source>
         <translation>0 TheGCCcoin/0 omgångar</translation>
     </message>
     <message>

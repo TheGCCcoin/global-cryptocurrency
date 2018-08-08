@@ -14,6 +14,8 @@
 
 #include <vector>
 
+// CBlockFileInfo [
+
 class CBlockFileInfo
 {
 public:
@@ -68,6 +70,9 @@ public:
      }
 };
 
+// CBlockFileInfo ]
+// CDiskBlockPos [
+
 struct CDiskBlockPos
 {
     int nFile;
@@ -108,6 +113,9 @@ struct CDiskBlockPos
 
 };
 
+// CDiskBlockPos ]
+// BlockStatus [
+
 enum BlockStatus: uint32_t {
     //! Unused.
     BLOCK_VALID_UNKNOWN      =    0,
@@ -145,6 +153,15 @@ enum BlockStatus: uint32_t {
     BLOCK_FAILED_CHILD       =   64, //!< descends from failed block
     BLOCK_FAILED_MASK        =   BLOCK_FAILED_VALID | BLOCK_FAILED_CHILD,
 };
+
+// BlockStatus ]
+// CBlockIndex [
+
+// c.4.6 pos: include FormatMoney [
+
+std::string FormatMoney(const CAmount& n);
+
+// c.4.6 pos: include FormatMoney ]
 
 /** The block chain is a tree shaped structure starting with the
  * genesis block at the root, with each block potentially having multiple
@@ -190,6 +207,31 @@ public:
     //! Verification status of this block. See enum BlockStatus
     unsigned int nStatus;
 
+    // c.4.2 pos: vars [
+
+    uint256 bnChainTrust; // ppcoin: trust score of block chain
+
+    int64_t nMint;
+    int64_t nMoneySupply;
+
+    unsigned int nFlags;  // ppcoin: block index flags
+    enum
+    {
+        BLOCK_PROOF_OF_STAKE = (1 << 0), // is proof-of-stake block
+        BLOCK_STAKE_ENTROPY  = (1 << 1), // entropy bit for stake modifier
+        BLOCK_STAKE_MODIFIER = (1 << 2), // regenerated stake modifier
+    };
+
+    uint64_t nStakeModifier; // hash modifier for proof-of-stake
+    unsigned int nStakeModifierChecksum; // checksum of index; in-memeory only
+
+    // proof-of-stake specific fields
+    COutPoint prevoutStake;
+    unsigned int nStakeTime;
+    uint256 hashProofOfStake;
+
+    // c.4.2 pos: vars ]
+
     //! block header
     int nVersion;
     uint256 hashMerkleRoot;
@@ -202,6 +244,8 @@ public:
 
     //! (memory only) Maximum nTime in the chain upto and including this block.
     unsigned int nTimeMax;
+
+    // SetNull [
 
     void SetNull()
     {
@@ -219,12 +263,29 @@ public:
         nSequenceId = 0;
         nTimeMax = 0;
 
+        // c.4.3 pos: vars null [
+
+        nMint = 0;
+        nMoneySupply = 0;
+
+        nFlags = 0;
+        nStakeModifier = 0;
+        nStakeModifierChecksum = 0;
+        hashProofOfStake.SetNull();
+        prevoutStake.SetNull();
+        nStakeTime = 0;
+
+        // c.4.3 pos: vars null ]
+
         nVersion       = 0;
         hashMerkleRoot = uint256();
         nTime          = 0;
         nBits          = 0;
         nNonce         = 0;
     }
+
+    // SetNull ]
+    // CBlockIndex [
 
     CBlockIndex()
     {
@@ -240,7 +301,25 @@ public:
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
+
+        //x c.4.4 pos: vars by block header - disabled by no vtx [
+        /*
+        if (block.IsProofOfStake())
+        {
+            SetProofOfStake();
+            prevoutStake = block.vtx[1].vin[0].prevout;
+            nStakeTime = block.vtx[1].nTime;
+        }
+        else
+        {
+            prevoutStake.SetNull();
+            nStakeTime = 0;
+        }
+        */
+        //x c.4.4 pos: vars by block header - disabled by no vtx ]
     }
+
+    // CBlockIndex ]
 
     CDiskBlockPos GetBlockPos() const {
         CDiskBlockPos ret;
@@ -288,6 +367,9 @@ public:
         return (int64_t)nTimeMax;
     }
 
+    // c.5.2.W! dash UpdateTime GetMedianTimePast vs thegcc [
+    // GetMedianTimePast [
+
     enum { nMedianTimeSpan=11 };
 
     int64_t GetMedianTimePast() const
@@ -304,12 +386,85 @@ public:
         return pbegin[(pend - pbegin)/2];
     }
 
+    // GetMedianTimePast ]
+    // c.5.2.W! dash UpdateTime GetMedianTimePast vs thegcc ]
+
+    // с.4.1 pos: fns [
+
+    bool IsProofOfWork() const
+    {
+        return !(nFlags & BLOCK_PROOF_OF_STAKE);
+    }
+
+    bool IsProofOfStake() const
+    {
+        return (nFlags & BLOCK_PROOF_OF_STAKE);
+    }
+
+    void SetProofOfStake()
+    {
+        nFlags |= BLOCK_PROOF_OF_STAKE;
+    }
+
+    unsigned int GetStakeEntropyBit() const
+    {
+        return ((nFlags & BLOCK_STAKE_ENTROPY) >> 1);
+    }
+
+    bool SetStakeEntropyBit(unsigned int nEntropyBit)
+    {
+        if (nEntropyBit > 1)
+            return false;
+        nFlags |= (nEntropyBit? BLOCK_STAKE_ENTROPY : 0);
+        return true;
+    }
+
+    bool GeneratedStakeModifier() const
+    {
+        return (nFlags & BLOCK_STAKE_MODIFIER);
+    }
+
+    void SetStakeModifier(uint64_t nModifier, bool fGeneratedStakeModifier)
+    {
+        nStakeModifier = nModifier;
+        if (fGeneratedStakeModifier)
+            nFlags |= BLOCK_STAKE_MODIFIER;
+    }
+
+    // с.4.1 pos: fns ]
+
     std::string ToString() const
     {
+        // c.4.5 pos: ToString [
+
+        /*
         return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
             pprev, nHeight,
             hashMerkleRoot.ToString(),
             GetBlockHash().ToString());
+            */
+/*
+        return strprintf("CBlockIndex(nprev=%p, pnext=%p, nFile=%u, nBlockPos=%-6d nHeight=%d, nMint=%s, nMoneySupply=%s, nFlags=(%s)(%d)(%s), nStakeModifier=%016"PRI64x", nStakeModifierChecksum=%08x, hashProofOfStake=%s, prevoutStake=(%s), nStakeTime=%d merkle=%s, hashBlock=%s)",
+                         pprev, pnext, nFile, nBlockPos, nHeight,
+                         FormatMoney(nMint).c_str(), FormatMoney(nMoneySupply).c_str(),
+                         GeneratedStakeModifier() ? "MOD" : "-", GetStakeEntropyBit(), IsProofOfStake()? "PoS" : "PoW",
+                         nStakeModifier, nStakeModifierChecksum,
+                         hashProofOfStake.ToString().c_str(),
+                         prevoutStake.ToString().c_str(), nStakeTime,
+                         hashMerkleRoot.ToString().c_str(),
+                         GetBlockHash().ToString().c_str());
+*/
+        return strprintf("CBlockIndex(nprev=%p, nFile=%u, nHeight=%d, nMint=%s, nMoneySupply=%s, nFlags=(%s)(%d)(%s), nStakeModifier=%016\"PRI64x\", nStakeModifierChecksum=%08x, hashProofOfStake=%s, prevoutStake=(%s), nStakeTime=%d merkle=%s, hashBlock=%s)",
+                         pprev, nFile, nHeight,
+                         FormatMoney(nMint).c_str(), FormatMoney(nMoneySupply).c_str(),
+                         GeneratedStakeModifier() ? "MOD" : "-", GetStakeEntropyBit(), IsProofOfStake()? "PoS" : "PoW",
+                         nStakeModifier, nStakeModifierChecksum,
+                         hashProofOfStake.ToString().c_str(),
+                         prevoutStake.ToString().c_str(), nStakeTime,
+                         hashMerkleRoot.ToString().c_str(),
+                         GetBlockHash().ToString().c_str());
+
+        // c.4.5 pos: ToString ]
     }
 
     //! Check whether this block index entry is valid up to the passed validity level.
@@ -343,9 +498,15 @@ public:
     const CBlockIndex* GetAncestor(int height) const;
 };
 
+// CBlockIndex ]
+// fns - GetBlockProof GetBlockProofEquivalentTime [
+
 arith_uint256 GetBlockProof(const CBlockIndex& block);
 /** Return the time it would take to redo the work difference between from and to, assuming the current hashrate corresponds to the difficulty at tip, in seconds. */
 int64_t GetBlockProofEquivalentTime(const CBlockIndex& to, const CBlockIndex& from, const CBlockIndex& tip, const Consensus::Params&);
+
+// fns - GetBlockProof GetBlockProofEquivalentTime ]
+// CDiskBlockIndex  [
 
 /** Used to marshal pointers into hashes for db storage. */
 class CDiskBlockIndex : public CBlockIndex
@@ -407,7 +568,6 @@ public:
         return block.GetHash();
     }
 
-
     std::string ToString() const
     {
         std::string str = "CDiskBlockIndex(";
@@ -418,6 +578,9 @@ public:
         return str;
     }
 };
+
+// CDiskBlockIndex ]
+// CChain [
 
 /** An in-memory indexed chain of blocks. */
 class CChain {
@@ -478,5 +641,7 @@ public:
     /** Find the earliest block with timestamp equal or greater than the given. */
     CBlockIndex* FindEarliestAtLeast(int64_t nTime) const;
 };
+
+// CChain ]
 
 #endif // BITCOIN_CHAIN_H

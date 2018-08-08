@@ -2196,8 +2196,8 @@ https://www.transifex.com/projects/p/TheGCCcoin/</translation>
     </message>
     <message>
         <location line="+7"/>
-        <source>0 TheGCCcoin / 0 Rounds</source>
-        <translation>0 TheGCCcoin / 0 Rounds</translation>
+        <source>0 TheGCC / 0 Rounds</source>
+        <translation>0 TheGCC / 0 Rounds</translation>
     </message>
     <message>
         <location line="+7"/>

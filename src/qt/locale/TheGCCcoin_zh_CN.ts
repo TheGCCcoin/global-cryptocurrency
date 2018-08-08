@@ -1718,7 +1718,7 @@ https://www.transifex.com/projects/p/TheGCCcoin/</translation>
         <translation>数量与循环次数：</translation>
     </message>
     <message>
-        <source>0 TheGCCcoin / 0 Rounds</source>
+        <source>0 TheGCC / 0 Rounds</source>
         <translation>0 达世币 / 0 循环数</translation>
     </message>
     <message>

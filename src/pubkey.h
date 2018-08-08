@@ -35,6 +35,8 @@ public:
 
 typedef uint256 ChainCode;
 
+// CPubKey [
+
 /** An encapsulated public key. */
 class CPubKey
 {
@@ -188,7 +190,19 @@ public:
 
     //! Derive BIP32 child pubkey.
     bool Derive(CPubKey& pubkeyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) const;
+
+    // l.1 GetHex [
+
+    std::string GetHex()
+    {
+        std::string my_std_string(reinterpret_cast<const char*>(vch), 65);
+        return my_std_string;
+    }
+
+    // l.1 GetHex ]
 };
+
+// CPubKey ]
 
 struct CExtPubKey {
     unsigned char nDepth;

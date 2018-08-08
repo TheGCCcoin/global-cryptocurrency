@@ -25,8 +25,12 @@
 #include "crypto/sph_shavite.h"
 #include "crypto/sph_simd.h"
 #include "crypto/sph_echo.h"
+#include "crypto/sph_hamsi.h"
+#include "crypto/sph_fugue.h"
 
 #include <vector>
+
+#include "livelog/llog-dump.h"
 
 typedef uint256 ChainCode;
 
@@ -311,9 +315,10 @@ public:
 uint64_t SipHashUint256(uint64_t k0, uint64_t k1, const uint256& val);
 uint64_t SipHashUint256Extra(uint64_t k0, uint64_t k1, const uint256& val, uint32_t extra);
 
+// f4.1 hash x13 [
 /* ----------- GCC Hash ------------------------------------------------ */
 template<typename T1>
-inline uint256 HashX11(const T1 pbegin, const T1 pend)
+inline uint256 HashX13(const T1 pbegin, const T1 pend)
 
 {
     sph_blake512_context     ctx_blake;
@@ -327,9 +332,17 @@ inline uint256 HashX11(const T1 pbegin, const T1 pend)
     sph_shavite512_context   ctx_shavite;
     sph_simd512_context      ctx_simd;
     sph_echo512_context      ctx_echo;
+    sph_hamsi512_context     ctx_hamsi;
+    sph_fugue512_context     ctx_fugue;
     static unsigned char pblank[1];
 
-    uint512 hash[11];
+    uint512 hash[17];
+
+    //x l.0.h0 hash [
+
+//    llogLog(L"Hash", L"hashblock", static_cast<const void*>(&pbegin[0]), (pend - pbegin) * sizeof(pbegin[0]), 0);
+
+    //x l.0.h0 hash ]
 
     sph_blake512_init(&ctx_blake);
     sph_blake512 (&ctx_blake, (pbegin == pend ? pblank : static_cast<const void*>(&pbegin[0])), (pend - pbegin) * sizeof(pbegin[0]));
@@ -375,7 +388,17 @@ inline uint256 HashX11(const T1 pbegin, const T1 pend)
     sph_echo512 (&ctx_echo, static_cast<const void*>(&hash[9]), 64);
     sph_echo512_close(&ctx_echo, static_cast<void*>(&hash[10]));
 
-    return hash[10].trim256();
+    sph_hamsi512_init(&ctx_hamsi);
+    sph_hamsi512 (&ctx_hamsi, static_cast<const void*>(&hash[10]), 64);
+    sph_hamsi512_close(&ctx_hamsi, static_cast<void*>(&hash[11]));
+
+    sph_fugue512_init(&ctx_fugue);
+    sph_fugue512 (&ctx_fugue, static_cast<const void*>(&hash[11]), 64);
+    sph_fugue512_close(&ctx_fugue, static_cast<void*>(&hash[12]));
+
+
+    return hash[12].trim256();
 }
+// f4.1 hash x13 ]
 
 #endif // BITCOIN_HASH_H

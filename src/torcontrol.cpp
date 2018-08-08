@@ -1,3 +1,5 @@
+// @ [
+
 // Copyright (c) 2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
@@ -29,6 +31,9 @@
 #include <event2/event.h>
 #include <event2/thread.h>
 
+// @ ]
+// vars [
+
 /** Default control port */
 const std::string DEFAULT_TOR_CONTROL = "127.0.0.1:9051";
 /** Tor cookie size (from control-spec.txt) */
@@ -49,6 +54,9 @@ static const float RECONNECT_TIMEOUT_EXP = 1.5;
  */
 static const int MAX_LINE_LENGTH = 100000;
 
+// vars ]
+// TorControlReply [
+
 /****** Low-level TorControlConnection ********/
 
 /** Reply from Tor, can be single or multi-line */
@@ -66,6 +74,9 @@ public:
         lines.clear();
     }
 };
+
+// TorControlReply ]
+// TorControlConnection [
 
 /** Low-level handling for Tor control connection.
  * Speaks the SMTP-like protocol as defined in torspec/control-spec.txt
@@ -122,6 +133,8 @@ private:
     static void eventcb(struct bufferevent *bev, short what, void *ctx);
 };
 
+// constructor/destructor [
+
 TorControlConnection::TorControlConnection(struct event_base *_base):
     base(_base), b_conn(0)
 {
@@ -132,6 +145,9 @@ TorControlConnection::~TorControlConnection()
     if (b_conn)
         bufferevent_free(b_conn);
 }
+
+// constructor/destructor ]
+// readcb [
 
 void TorControlConnection::readcb(struct bufferevent *bev, void *ctx)
 {
@@ -178,6 +194,9 @@ void TorControlConnection::readcb(struct bufferevent *bev, void *ctx)
     }
 }
 
+// readcb ]
+// eventcb [
+
 void TorControlConnection::eventcb(struct bufferevent *bev, short what, void *ctx)
 {
     TorControlConnection *self = (TorControlConnection*)ctx;
@@ -193,6 +212,9 @@ void TorControlConnection::eventcb(struct bufferevent *bev, short what, void *ct
         self->disconnected(*self);
     }
 }
+
+// eventcb ]
+// Connect [
 
 bool TorControlConnection::Connect(const std::string &target, const ConnectionCB& _connected, const ConnectionCB&  _disconnected)
 {
@@ -224,6 +246,9 @@ bool TorControlConnection::Connect(const std::string &target, const ConnectionCB
     return true;
 }
 
+// Connect ]
+// Disconnect [
+
 bool TorControlConnection::Disconnect()
 {
     if (b_conn)
@@ -231,6 +256,9 @@ bool TorControlConnection::Disconnect()
     b_conn = 0;
     return true;
 }
+
+// Disconnect ]
+// Command [
 
 bool TorControlConnection::Command(const std::string &cmd, const ReplyHandlerCB& reply_handler)
 {
@@ -244,6 +272,11 @@ bool TorControlConnection::Command(const std::string &cmd, const ReplyHandlerCB&
     reply_handlers.push_back(reply_handler);
     return true;
 }
+
+// Command ]
+// TorControlConnection ]
+// General parsing utilities [
+// SplitTorReplyLine [
 
 /****** General parsing utilities ********/
 
@@ -262,6 +295,9 @@ static std::pair<std::string,std::string> SplitTorReplyLine(const std::string &s
         ++ptr; // skip ' '
     return make_pair(type, s.substr(ptr));
 }
+
+// SplitTorReplyLine ]
+// ParseTorReplyMapping [
 
 /** Parse reply arguments in the form 'METHODS=COOKIE,SAFECOOKIE COOKIEFILE=".../control_auth_cookie"'.
  */
@@ -306,6 +342,9 @@ static std::map<std::string,std::string> ParseTorReplyMapping(const std::string 
     return mapping;
 }
 
+// ParseTorReplyMapping ]
+// ReadBinaryFile [
+
 /** Read full contents of a file and return them in a std::string.
  * Returns a pair <status, string>.
  * If an error occurred, status will be false, otherwise status will be true and the data will be returned in string.
@@ -330,6 +369,10 @@ static std::pair<bool,std::string> ReadBinaryFile(const std::string &filename, s
     return std::make_pair(true,retval);
 }
 
+// ReadBinaryFile ]
+// General parsing utilities ]
+// util [
+
 /** Write contents of std::string to a file.
  * @return true on success.
  */
@@ -345,6 +388,9 @@ static bool WriteBinaryFile(const std::string &filename, const std::string &data
     fclose(f);
     return true;
 }
+
+// util ]
+// TorController def [
 
 /****** Bitcoin specific TorController implementation ********/
 
@@ -394,6 +440,11 @@ private:
     static void reconnect_cb(evutil_socket_t fd, short what, void *arg);
 };
 
+// TorController def ]
+// TorController [
+
+// constructor() [
+
 TorController::TorController(struct event_base* _base, const std::string& _target):
     base(_base),
     target(_target), conn(base), reconnect(true), reconnect_ev(0),
@@ -415,6 +466,9 @@ TorController::TorController(struct event_base* _base, const std::string& _targe
     }
 }
 
+// constructor() ]
+// destructor() [
+
 TorController::~TorController()
 {
     if (reconnect_ev) {
@@ -425,6 +479,10 @@ TorController::~TorController()
         RemoveLocal(service);
     }
 }
+
+// destructor() ]
+// tor callbacks [
+// add_onion_cb [
 
 void TorController::add_onion_cb(TorControlConnection& _conn, const TorControlReply& reply)
 {
@@ -454,6 +512,9 @@ void TorController::add_onion_cb(TorControlConnection& _conn, const TorControlRe
     }
 }
 
+// add_onion_cb ]
+// auth_cb [
+
 void TorController::auth_cb(TorControlConnection& _conn, const TorControlReply& reply)
 {
     if (reply.code == 250) {
@@ -481,6 +542,9 @@ void TorController::auth_cb(TorControlConnection& _conn, const TorControlReply& 
     }
 }
 
+// auth_cb ]
+// ComputeResponse [
+
 /** Compute Tor SAFECOOKIE response.
  *
  *    ServerHash is computed as:
@@ -507,6 +571,9 @@ static std::vector<uint8_t> ComputeResponse(const std::string &key, const std::v
     computeHash.Finalize(computedHash.data());
     return computedHash;
 }
+
+// ComputeResponse ]
+// authchallenge_cb [
 
 void TorController::authchallenge_cb(TorControlConnection& _conn, const TorControlReply& reply)
 {
@@ -538,6 +605,9 @@ void TorController::authchallenge_cb(TorControlConnection& _conn, const TorContr
         LogPrintf("tor: SAFECOOKIE authentication challenge failed\n");
     }
 }
+
+// authchallenge_cb ]
+// protocolinfo_cb [
 
 void TorController::protocolinfo_cb(TorControlConnection& _conn, const TorControlReply& reply)
 {
@@ -613,6 +683,9 @@ void TorController::protocolinfo_cb(TorControlConnection& _conn, const TorContro
     }
 }
 
+// protocolinfo_cb ]
+// connected_cb [
+
 void TorController::connected_cb(TorControlConnection& _conn)
 {
     reconnect_timeout = RECONNECT_TIMEOUT_START;
@@ -620,6 +693,9 @@ void TorController::connected_cb(TorControlConnection& _conn)
     if (!_conn.Command("PROTOCOLINFO 1", boost::bind(&TorController::protocolinfo_cb, this, _1, _2)))
         LogPrintf("tor: Error sending initial protocolinfo command\n");
 }
+
+// connected_cb ]
+// disconnected_cb [
 
 void TorController::disconnected_cb(TorControlConnection& _conn)
 {
@@ -639,6 +715,10 @@ void TorController::disconnected_cb(TorControlConnection& _conn)
     reconnect_timeout *= RECONNECT_TIMEOUT_EXP;
 }
 
+// disconnected_cb ]
+// tor callbacks ]
+// Reconnect [
+
 void TorController::Reconnect()
 {
     /* Try to reconnect and reestablish if we get booted - for example, Tor
@@ -650,16 +730,26 @@ void TorController::Reconnect()
     }
 }
 
+// Reconnect ]
+// GetPrivateKeyFile [
+
 std::string TorController::GetPrivateKeyFile()
 {
     return (GetDataDir() / "onion_private_key").string();
 }
+
+// GetPrivateKeyFile ]
+// reconnect_cb [
 
 void TorController::reconnect_cb(evutil_socket_t fd, short what, void *arg)
 {
     TorController *self = (TorController*)arg;
     self->Reconnect();
 }
+
+// reconnect_cb ]
+// TorController ]
+// TorControlThread [
 
 /****** Thread ********/
 struct event_base *base;
@@ -711,3 +801,5 @@ void StopTorControl()
         base = 0;
     }
 }
+
+// TorControlThread ]

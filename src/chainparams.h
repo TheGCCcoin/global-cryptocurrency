@@ -13,16 +13,24 @@
 
 #include <vector>
 
+// CDNSSeedData [
+
 struct CDNSSeedData {
     std::string name, host;
     bool supportsServiceBitsFiltering;
     CDNSSeedData(const std::string &strName, const std::string &strHost, bool supportsServiceBitsFilteringIn = false) : name(strName), host(strHost), supportsServiceBitsFiltering(supportsServiceBitsFilteringIn) {}
 };
 
+// CDNSSeedData ]
+// SeedSpec6 [
+
 struct SeedSpec6 {
     uint8_t addr[16];
     uint16_t port;
 };
+
+// SeedSpec6 ]
+// CCheckpointData [
 
 typedef std::map<int, uint256> MapCheckpoints;
 
@@ -30,11 +38,17 @@ struct CCheckpointData {
     MapCheckpoints mapCheckpoints;
 };
 
+// CCheckpointData ]
+// ChainTxData [
+
 struct ChainTxData {
     int64_t nTime;
     int64_t nTxCount;
     double dTxRate;
 };
+
+// ChainTxData ]
+// CChainParams [
 
 /**
  * CChainParams defines various tweakable parameters of a given instance of the
@@ -116,6 +130,9 @@ protected:
     std::string strSporkAddress;
 };
 
+// CChainParams ]
+// Params [
+
 /**
  * Return the currently selected parameters. This won't change after app
  * startup, except for unit tests.
@@ -137,5 +154,7 @@ void SelectParams(const std::string& chain);
  * Allows modifying the BIP9 regtest parameters.
  */
 void UpdateRegtestBIP9Parameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout);
+
+// Params ]
 
 #endif // BITCOIN_CHAINPARAMS_H

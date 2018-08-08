@@ -1744,6 +1744,8 @@ int64_t CWalletTx::GetTxTime() const
     return n ? n : nTimeReceived;
 }
 
+// GetRequestCount -> mapRequestCount<hash> [
+
 int CWalletTx::GetRequestCount() const
 {
     // Returns -1 if it wasn't being tracked
@@ -1782,6 +1784,8 @@ int CWalletTx::GetRequestCount() const
     }
     return nRequests;
 }
+
+// GetRequestCount -> mapRequestCount<hash> ]
 
 void CWalletTx::GetAmounts(std::list<COutputEntry>& listReceived,
                            std::list<COutputEntry>& listSent, CAmount& nFee, std::string& strSentAccount, const isminefilter& filter) const
@@ -2682,6 +2686,37 @@ static void ApproximateBestSubset(std::vector<std::pair<CAmount, std::pair<const
         }
     }
 }
+
+// g.8.2.1 pos: MintableCoins [
+
+extern int64_t nReserveBalance;
+
+bool CWallet::MintableCoins()
+{
+    LOCK(cs_main);
+    CAmount nBalance = GetBalance();
+
+    if (nBalance > 0) {
+        GetArg("-reservebalance", nReserveBalance);
+
+        if (nBalance <= nReserveBalance)
+            return false;
+
+        std::vector<COutput> vCoins;
+        AvailableCoins(vCoins, true, NULL);
+
+        for (const COutput& out : vCoins) {
+            int64_t nTxTime = out.tx->GetTxTime();
+
+            if (GetAdjustedTime() - nTxTime > GetStakeMinAge(nTxTime))
+                return true;
+        }
+    }
+
+    return false;
+}
+
+// g.8.2.1 pos: MintableCoins ]
 
 // move denoms down
 bool less_then_denom (const COutput& out1, const COutput& out2)
@@ -5348,47 +5383,6 @@ void CMerkleTx::SetMerkleBranch(const CBlockIndex* pindex, int posInBlock)
     // set the position of the transaction in the block
     nIndex = posInBlock;
 }
-
-int CMerkleTx::GetDepthInMainChain(const CBlockIndex* &pindexRet, bool enableIX) const
-{
-    int nResult;
-
-    if (hashUnset())
-        nResult = 0;
-    else {
-        AssertLockHeld(cs_main);
-
-        // Find the block it claims to be in
-        BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
-        if (mi == mapBlockIndex.end())
-            nResult = 0;
-        else {
-            CBlockIndex* pindex = (*mi).second;
-            if (!pindex || !chainActive.Contains(pindex))
-                nResult = 0;
-            else {
-                pindexRet = pindex;
-                nResult = ((nIndex == -1) ? (-1) : 1) * (chainActive.Height() - pindex->nHeight + 1);
-
-                if (nResult == 0 && !mempool.exists(GetHash()))
-                    return -1; // Not in chain, not in mempool
-            }
-        }
-    }
-
-    if(enableIX && nResult < 6 && instantsend.IsLockedInstantSendTransaction(GetHash()))
-        return nInstantSendDepth + nResult;
-
-    return nResult;
-}
-
-int CMerkleTx::GetBlocksToMaturity() const
-{
-    if (!IsCoinBase())
-        return 0;
-    return std::max(0, (COINBASE_MATURITY+1) - GetDepthInMainChain());
-}
-
 
 bool CMerkleTx::AcceptToMemoryPool(const CAmount& nAbsurdFee, CValidationState& state)
 {

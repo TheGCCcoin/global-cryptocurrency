@@ -11,6 +11,8 @@
 #include "serialize.h"
 #include "uint256.h"
 
+// COutPoint [
+
 /** An outpoint - a combination of a transaction hash and an index n into its vout */
 class COutPoint
 {
@@ -51,6 +53,9 @@ public:
     std::string ToString() const;
     std::string ToStringShort() const;
 };
+
+// COutPoint ]
+// CTxIn [
 
 /** An input of a transaction.  It contains the location of the previous
  * transaction's output that it claims and a signature that matches the
@@ -127,6 +132,9 @@ public:
     std::string ToString() const;
 };
 
+// CTxIn ]
+// CTxOut [
+
 /** An output of a transaction.  It contains the public key that the next input
  * must be able to sign with to claim it.
  */
@@ -163,6 +171,21 @@ public:
     {
         return (nValue == -1);
     }
+
+    // f3.2 CTxOut IsEmpty [
+
+    void SetEmpty()
+    {
+        nValue = 0;
+        scriptPubKey.clear();
+    }
+
+    bool IsEmpty() const
+    {
+        return (nValue == 0 && scriptPubKey.empty());
+    }
+
+    // f3.2 CTxOut IsEmpty ]
 
     CAmount GetDustThreshold(const CFeeRate &minRelayTxFee) const
     {
@@ -202,6 +225,9 @@ public:
 
 struct CMutableTransaction;
 
+// CTxOut ]
+// CTransaction [
+
 /** The basic transaction that is broadcasted on the network and contained in
  * blocks.  A transaction can contain multiple inputs and outputs.
  */
@@ -223,6 +249,9 @@ public:
     // and bypass the constness. This is safe, as they update the entire
     // structure, including the hash.
     const int32_t nVersion;
+    // f2.1 CTransaction nTime [
+    unsigned int nTime;
+    // f2.1 CTransaction nTime ]
     const std::vector<CTxIn> vin;
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime;
@@ -244,6 +273,9 @@ public:
     template <typename Stream>
     inline void Serialize(Stream& s) const {
         s << this->nVersion;
+        // f2.2 CTransaction nTime [
+        s << nTime;
+        // f2.2 CTransaction nTime ]
         s << vin;
         s << vout;
         s << nLockTime;
@@ -280,10 +312,68 @@ public:
      */
     unsigned int GetTotalSize() const;
 
+    // f3.1 IsCoinBase/IsCoinStake [
+
+    /*
+    bool IsCoinBase() const
+    {
+        return (vin.size() == 1 && vin[0].prevout.IsNull());
+    }*/
+
+    // blk [
+    /*
     bool IsCoinBase() const
     {
         return (vin.size() == 1 && vin[0].prevout.IsNull());
     }
+    bool IsCoinStake() const
+    {
+        // the coin stake transaction is marked with the first output empty
+        return (vin.size() > 0 && (!vin[0].prevout.IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
+    }
+    */
+    // blk ]
+    // pivx [
+    /*
+    bool IsCoinBase() const
+    {
+        return (vin.size() == 1 && vin[0].prevout.IsNull() && !ContainsZerocoins());
+    }
+    bool IsCoinStake() const
+    {
+        if (vin.empty())
+            return false;
+
+        // ppcoin: the coin stake transaction is marked with the first output empty
+        bool fAllowNull = vin[0].scriptSig.IsZerocoinSpend();
+        if (vin[0].prevout.IsNull() && !fAllowNull)
+            return false;
+
+        return (vin.size() > 0 && vout.size() >= 2 && vout[0].IsEmpty());
+    }
+    */
+    // pivx ]
+    // thegcc [
+
+    bool IsCoinBase() const
+    {
+        return (vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
+    }
+
+    bool IsCoinStake() const
+    {
+        // ppcoin: the coin stake transaction is marked with the first output empty
+        return (vin.size() > 0 && (!vin[0].prevout.IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
+    }
+
+    bool IsCoinBaseOrStake() const
+    {
+        return (IsCoinBase() || IsCoinStake());
+    }
+
+    // thegcc ]
+
+    // f3.1 IsCoinBase/IsCoinStake ]
 
     friend bool operator==(const CTransaction& a, const CTransaction& b)
     {
@@ -298,10 +388,16 @@ public:
     std::string ToString() const;
 };
 
+// CTransaction ]
+// CMutableTransaction [
+
 /** A mutable version of CTransaction. */
 struct CMutableTransaction
 {
     int32_t nVersion;
+    // f1.1 CMutableTransaction nTime [
+    unsigned int nTime;
+    // f1.1 CMutableTransaction nTime ]
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
     uint32_t nLockTime;
@@ -314,6 +410,9 @@ struct CMutableTransaction
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(this->nVersion);
+        // f1.2 CMutableTransaction nTime [
+        READWRITE(nTime);
+        // f1.2 CMutableTransaction nTime ]
         READWRITE(vin);
         READWRITE(vout);
         READWRITE(nLockTime);
@@ -347,6 +446,9 @@ typedef std::shared_ptr<const CTransaction> CTransactionRef;
 static inline CTransactionRef MakeTransactionRef() { return std::make_shared<const CTransaction>(); }
 template <typename Tx> static inline CTransactionRef MakeTransactionRef(Tx&& txIn) { return std::make_shared<const CTransaction>(std::forward<Tx>(txIn)); }
 
+// CMutableTransaction ]
+// CompareInputBIP69 [
+
 /** Implementation of BIP69
  * https://github.com/bitcoin/bips/blob/master/bip-0069.mediawiki
  */
@@ -367,6 +469,9 @@ struct CompareInputBIP69
     }
 };
 
+// CompareInputBIP69 ]
+// CompareOutputBIP69 [
+
 struct CompareOutputBIP69
 {
     inline bool operator()(const CTxOut& a, const CTxOut& b) const
@@ -374,5 +479,7 @@ struct CompareOutputBIP69
         return a.nValue < b.nValue || (a.nValue == b.nValue && a.scriptPubKey < b.scriptPubKey);
     }
 };
+
+// CompareOutputBIP69 ]
 
 #endif // BITCOIN_PRIMITIVES_TRANSACTION_H

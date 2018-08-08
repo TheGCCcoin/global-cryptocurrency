@@ -14,8 +14,12 @@
 /** Amount in satoshis (Can be negative) */
 typedef int64_t CAmount;
 
-static const CAmount COIN = 100000000;
-static const CAmount CENT = 1000000;
+// c.1.2 thegcc: COIN CENT [
+
+static const CAmount COIN = 1000000;
+static const CAmount CENT = 10000;
+
+// c.1.2 thegcc: COIN CENT ]
 
 extern const std::string CURRENCY_UNIT;
 
@@ -28,7 +32,13 @@ extern const std::string CURRENCY_UNIT;
  * critical; in unusual circumstances like a(nother) overflow bug that allowed
  * for the creation of coins out of thin air modification could lead to a fork.
  * */
-static const CAmount MAX_MONEY = 21000000 * COIN;
+
+// c.1.1 thegcc: MAX_MONEY [
+
+static const CAmount MAX_MONEY = COIN * 125000000000;  // 124 Billion -> 125 bumped to be safe
+
+// c.1.1 thegcc: MAX_MONEY ]
+
 inline bool MoneyRange(const CAmount& nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 
 /**

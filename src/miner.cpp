@@ -48,6 +48,8 @@
 uint64_t nLastBlockTx = 0;
 uint64_t nLastBlockSize = 0;
 
+// ScoreCompare [
+
 class ScoreCompare
 {
 public:
@@ -59,8 +61,18 @@ public:
     }
 };
 
+// ScoreCompare ]
+// c.5.2 pos: UpdateTime - review! GetMedianTimePast [
+
 int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
+    int64_t nOldTime = pblock->nTime;
+//!thegcc-old    int64_t nNewTime = std::max(pblock->GetBlockTime(), GetAdjustedTime());
+    int64_t nNewTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+
+    if (nOldTime < nNewTime)
+        pblock->nTime = nNewTime;
+/*
     int64_t nOldTime = pblock->nTime;
     int64_t nNewTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
 
@@ -72,7 +84,13 @@ int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParam
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, consensusParams);
 
     return nNewTime - nOldTime;
+    */
+
+    return nNewTime - nOldTime;
 }
+
+// c.5.2 pos: UpdateTime - review! GetMedianTimePast ]
+// BlockAssembler [
 
 BlockAssembler::BlockAssembler(const CChainParams& _chainparams)
     : chainparams(_chainparams)
@@ -108,7 +126,10 @@ void BlockAssembler::resetBlock()
     blockFinished = false;
 }
 
-std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& scriptPubKeyIn)
+// c.5.1 pos: CreateNewBlock fProofOfStake [
+
+//std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& scriptPubKeyIn)
+std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& scriptPubKeyIn, bool fProofOfStake)
 {
     int64_t nTimeStart = GetTimeMicros();
 
@@ -180,7 +201,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     // Fill in header
     pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
     UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-    pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
+    pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus(), fProofOfStake);
     pblock->nNonce         = 0;
     pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(*pblock->vtx[0]);
 
@@ -194,6 +215,8 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
 
     return std::move(pblocktemplate);
 }
+
+// c.5.1 pos: CreateNewBlock fProofOfStake ]
 
 bool BlockAssembler::isStillDependent(CTxMemPool::txiter iter)
 {
@@ -570,6 +593,9 @@ void BlockAssembler::addPriorityTxs()
     }
 }
 
+// BlockAssembler ]
+// IncrementExtraNonce [
+
 void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
 {
     // Update nExtraNonce
@@ -588,3 +614,5 @@ void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned
     pblock->vtx[0] = MakeTransactionRef(std::move(txCoinbase));
     pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
 }
+
+// IncrementExtraNonce ]

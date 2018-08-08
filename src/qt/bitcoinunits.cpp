@@ -46,9 +46,9 @@ QString BitcoinUnits::name(int unit)
     {
         switch(unit)
         {
-            case TheGCCcoin: return QString("TheGCCcoin");
-            case mTheGCCcoin: return QString("mTheGCCcoin");
-            case uTheGCCcoin: return QString::fromUtf8("μTheGCCcoin");
+            case TheGCCcoin: return QString("TheGCC");
+            case mTheGCCcoin: return QString("mTheGCC");
+            case uTheGCCcoin: return QString::fromUtf8("μTheGCC");
             case duffs: return QString("duffs");
             default: return QString("???");
         }
@@ -57,9 +57,9 @@ QString BitcoinUnits::name(int unit)
     {
         switch(unit)
         {
-            case TheGCCcoin: return QString("tTheGCCcoin");
-            case mTheGCCcoin: return QString("mtTheGCCcoin");
-            case uTheGCCcoin: return QString::fromUtf8("μtTheGCCcoin");
+            case TheGCCcoin: return QString("tTheGCC");
+            case mTheGCCcoin: return QString("mtTheGCC");
+            case uTheGCCcoin: return QString::fromUtf8("μtTheGCC");
             case duffs: return QString("tduffs");
             default: return QString("???");
         }

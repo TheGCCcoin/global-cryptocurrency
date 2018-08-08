@@ -194,8 +194,22 @@ BITCOIN_CORE_H = \
   zmq/zmqabstractnotifier.h \
   zmq/zmqconfig.h\
   zmq/zmqnotificationinterface.h \
-  zmq/zmqpublishnotifier.h
+  zmq/zmqpublishnotifier.h \
+  thegcc/imports.h
 
+#libTheGCCcoin_common_a_DEPENDENCIES = thegcc/imports.h.gch
+#thegcc/imports.h
+#.INTERMEDIATE: thegcc/imports.h.gch
+
+#thegcc/*.o: thegcc/imports.h.gch
+
+
+#thegcc/imports.h.gch: thegcc/imports.h
+#	@echo "# PCH ["
+#	$(AM_V_CXX) $(OBJCXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+#	  $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)  \
+#	  $(CPPFLAGS) $(AM_CXXFLAGS) $(QT_INCLUDES) $(AM_CXXFLAGS) $(PIE_FLAGS) $(CXXFLAGS) -o $@ thegcc/imports.h
+#	@echo "# PCH ]"
 
 obj/build.h: FORCE
 	@$(MKDIR_P) $(builddir)/obj
@@ -328,6 +342,9 @@ crypto_libTheGCCcoin_crypto_a_SOURCES += \
   crypto/shavite.c \
   crypto/simd.c \
   crypto/skein.c \
+  crypto/hamsi.c \
+  crypto/hamsi_helper.c \
+  crypto/fugue.c \
   crypto/sph_blake.h \
   crypto/sph_bmw.h \
   crypto/sph_cubehash.h \
@@ -398,6 +415,17 @@ libTheGCCcoin_common_a_SOURCES = \
   script/sign.cpp \
   script/standard.cpp \
   warnings.cpp \
+  livelog/llog-dump.cpp \
+  thegcc/pos.cpp \
+  thegcc/pos-miner.cpp \
+  thegcc/blocksignature.cpp \
+  thegcc/stakeinput.cpp \
+  thegcc/validation/Block.cpp \
+  thegcc/pos/Pos.cpp \
+  thegcc/kernel/Kernel.cpp \
+  thegcc/wallet/Wallet.cpp \
+  thegcc/masternode/Masternode.cpp \
+  thegcc/miner/Miner.cpp \
   $(BITCOIN_CORE_H)
 
 # util: shared between all executables.

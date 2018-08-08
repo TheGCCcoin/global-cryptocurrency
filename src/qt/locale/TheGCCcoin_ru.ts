@@ -1722,8 +1722,8 @@ https://www.transifex.com/projects/p/TheGCCcoin/</translation>
         <translation>Сумма и раунды:</translation>
     </message>
     <message>
-        <source>0 TheGCCcoin / 0 Rounds</source>
-        <translation>0 TheGCCcoin / 0 раундов</translation>
+        <source>0 TheGCC / 0 Rounds</source>
+        <translation>0 TheGCC / 0 раундов</translation>
     </message>
     <message>
         <source>Submitted Denom:</source>

@@ -22,6 +22,12 @@ namespace Checkpoints
 //! Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
 CBlockIndex* GetLastCheckpoint(const CCheckpointData& data);
 
+    // b.4.1.2 GetTotalBlocksEstimate [
+
+    int GetTotalBlocksEstimate();
+
+    // b.4.1.2 GetTotalBlocksEstimate ]
+
 } //namespace Checkpoints
 
 #endif // BITCOIN_CHECKPOINTS_H

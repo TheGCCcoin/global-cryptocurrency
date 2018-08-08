@@ -1,0 +1,6 @@
+#ifndef THEGCC_KERNEL_H
+#define THEGCC_KERNEL_H
+
+
+
+#endif //THEGCC_KERNEL_H

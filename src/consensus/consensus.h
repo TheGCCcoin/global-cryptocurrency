@@ -25,12 +25,14 @@ inline unsigned int MaxBlockSigOps(bool fDIP0001Active /*= false */)
 }
 
 // MaxBlockSigOps -> MaxBlockSize/50 ]
-// COINBASE_MATURITY = 100 [
+
+// b.5.2 COINBASE_MATURITY [
 
 /** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
-static const int COINBASE_MATURITY = 100;
+// static const int COINBASE_MATURITY = 100;
+extern int COINBASE_MATURITY;
 
-// COINBASE_MATURITY = 100 ]
+// b.5.2 COINBASE_MATURITY ]
 // LOCKTIME [
 
 /** Flags for nSequence and nLockTime locks */

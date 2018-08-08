@@ -3,6 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+// 0 [
+
 #ifdef HAVE_CONFIG_H
 #include "config/TheGCCcoin-config.h"
 #endif
@@ -15,6 +17,12 @@
 #include "random.h"
 #include "util.h"
 #include "utilstrencodings.h"
+
+// p3.0.b include llog [
+
+#include "livelog/llog-dump.h"
+
+// p3.0.b include llog ]
 
 #include <atomic>
 
@@ -37,8 +45,17 @@ int nConnectTimeout = DEFAULT_CONNECT_TIMEOUT;
 bool fNameLookup = DEFAULT_NAME_LOOKUP;
 
 // Need ample time for negotiation for very slow proxies such as Tor (milliseconds)
-static const int SOCKS5_RECV_TIMEOUT = 20 * 1000;
+// p3.3 fix socks5 timeout for gcc [
+
+//static const int SOCKS5_RECV_TIMEOUT = 20 * 1000;
+static const int SOCKS5_RECV_TIMEOUT = 200 * 1000; // 3m
+
+// p3.3 socks5 timeout for gcc ]
+
 static std::atomic<bool> interruptSocks5Recv(false);
+
+// 0 ]
+// ParseNetwork [
 
 enum Network ParseNetwork(std::string net) {
     boost::to_lower(net);
@@ -47,6 +64,9 @@ enum Network ParseNetwork(std::string net) {
     if (net == "tor" || net == "onion")  return NET_TOR;
     return NET_UNROUTABLE;
 }
+
+// ParseNetwork ]
+// GetNetworkName [
 
 std::string GetNetworkName(enum Network net) {
     switch(net)
@@ -57,6 +77,9 @@ std::string GetNetworkName(enum Network net) {
     default: return "";
     }
 }
+
+// GetNetworkName ]
+// SplitHostPort [
 
 void SplitHostPort(std::string in, int &portOut, std::string &hostOut) {
     size_t colon = in.find_last_of(':');
@@ -76,6 +99,9 @@ void SplitHostPort(std::string in, int &portOut, std::string &hostOut) {
     else
         hostOut = in;
 }
+
+// SplitHostPort ]
+// LookupIntern [
 
 bool static LookupIntern(const char *pszName, std::vector<CNetAddr>& vIP, unsigned int nMaxSolutions, bool fAllowLookup)
 {
@@ -129,6 +155,9 @@ bool static LookupIntern(const char *pszName, std::vector<CNetAddr>& vIP, unsign
     return (vIP.size() > 0);
 }
 
+// LookupIntern ]
+// LookupHost [
+
 bool LookupHost(const char *pszName, std::vector<CNetAddr>& vIP, unsigned int nMaxSolutions, bool fAllowLookup)
 {
     std::string strHost(pszName);
@@ -151,6 +180,9 @@ bool LookupHost(const char *pszName, CNetAddr& addr, bool fAllowLookup)
     addr = vIP.front();
     return true;
 }
+
+// LookupHost ]
+// Lookup [
 
 bool Lookup(const char *pszName, std::vector<CService>& vAddr, int portDefault, bool fAllowLookup, unsigned int nMaxSolutions)
 {
@@ -180,6 +212,9 @@ bool Lookup(const char *pszName, CService& addr, int portDefault, bool fAllowLoo
     return true;
 }
 
+// Lookup ]
+// LookupNumeric [
+
 CService LookupNumeric(const char *pszName, int portDefault)
 {
     CService addr;
@@ -190,6 +225,9 @@ CService LookupNumeric(const char *pszName, int portDefault)
     return addr;
 }
 
+// LookupNumeric ]
+// MillisToTimeval [
+
 struct timeval MillisToTimeval(int64_t nTimeout)
 {
     struct timeval timeout;
@@ -197,6 +235,9 @@ struct timeval MillisToTimeval(int64_t nTimeout)
     timeout.tv_usec = (nTimeout % 1000) * 1000;
     return timeout;
 }
+
+// MillisToTimeval ]
+// InterruptibleRecv [
 
 /**
  * Read bytes from socket. This will either read the full number of bytes requested
@@ -248,11 +289,17 @@ bool static InterruptibleRecv(char* data, size_t len, int timeout, SOCKET& hSock
     return len == 0;
 }
 
+// InterruptibleRecv ]
+// Socks5 ProxyCredentials [
+
 struct ProxyCredentials
 {
     std::string username;
     std::string password;
 };
+
+// Socks5 ProxyCredentials ]
+// Socks5 [
 
 std::string Socks5ErrorString(int err)
 {
@@ -351,6 +398,15 @@ static bool Socks5(const std::string& strDest, int port, const ProxyCredentials 
     char pchRet2[4];
     if (!InterruptibleRecv(pchRet2, 4, SOCKS5_RECV_TIMEOUT, hSocket)) {
         CloseSocket(hSocket);
+
+        // p3.1.b socks5 err llog [
+
+        std::wostringstream ss;
+        ss << "err: Error reading proxy response interruptSocks5Recv=" << interruptSocks5Recv << "\n";
+        llogLog(L"Node/Net", ss.str());
+
+        // p3.1.b socks5 err llog ]
+
         return error("Error reading proxy response");
     }
     if (pchRet2[0] != 0x05) {
@@ -396,6 +452,9 @@ static bool Socks5(const std::string& strDest, int port, const ProxyCredentials 
     LogPrint("net", "SOCKS5 connected %s\n", strDest);
     return true;
 }
+
+// Socks5 ]
+// ConnectSocketDirectly [
 
 bool static ConnectSocketDirectly(const CService &addrConnect, SOCKET& hSocketRet, int nTimeout)
 {
@@ -486,6 +545,9 @@ bool static ConnectSocketDirectly(const CService &addrConnect, SOCKET& hSocketRe
     return true;
 }
 
+// ConnectSocketDirectly ]
+// Proxy [
+
 bool SetProxy(enum Network net, const proxyType &addrProxy) {
     assert(net >= 0 && net < NET_MAX);
     if (!addrProxy.IsValid())
@@ -543,6 +605,9 @@ static bool ConnectThroughProxy(const proxyType &proxy, const std::string& strDe
             *outProxyConnectionFailed = true;
         return false;
     }
+
+    //x hack1 - disable  randomize_credentials [
+
     // do socks negotiation
     if (proxy.randomize_credentials) {
         ProxyCredentials random_auth;
@@ -555,9 +620,14 @@ static bool ConnectThroughProxy(const proxyType &proxy, const std::string& strDe
             return false;
     }
 
+    //x hack1 - disable  randomize_credentials ]
+
     hSocketRet = hSocket;
     return true;
 }
+
+// Proxy ]
+// Socket [
 
 bool ConnectSocket(const CService &addrDest, SOCKET& hSocketRet, int nTimeout, bool *outProxyConnectionFailed)
 {
@@ -599,6 +669,9 @@ bool ConnectSocketByName(CService &addr, SOCKET& hSocketRet, const char *pszDest
     return ConnectThroughProxy(proxy, strDest, port, hSocketRet, nTimeout, outProxyConnectionFailed);
 }
 
+// Socket ]
+// LookupSubNet [
+
 bool LookupSubNet(const char* pszName, CSubNet& ret)
 {
     std::string strSubnet(pszName);
@@ -636,6 +709,9 @@ bool LookupSubNet(const char* pszName, CSubNet& ret)
     return false;
 }
 
+// LookupSubNet ]
+// NetworkErrorString [
+
 #ifdef WIN32
 std::string NetworkErrorString(int err)
 {
@@ -670,6 +746,9 @@ std::string NetworkErrorString(int err)
 }
 #endif
 
+// NetworkErrorString ]
+// CloseSocket [
+
 bool CloseSocket(SOCKET& hSocket)
 {
     if (hSocket == INVALID_SOCKET)
@@ -682,6 +761,9 @@ bool CloseSocket(SOCKET& hSocket)
     hSocket = INVALID_SOCKET;
     return ret != SOCKET_ERROR;
 }
+
+// CloseSocket ]
+// SetSocketNonBlocking [
 
 bool SetSocketNonBlocking(SOCKET& hSocket, bool fNonBlocking)
 {
@@ -712,7 +794,12 @@ bool SetSocketNonBlocking(SOCKET& hSocket, bool fNonBlocking)
     return true;
 }
 
+// SetSocketNonBlocking ]
+// InterruptSocks5 [
+
 void InterruptSocks5(bool interrupt)
 {
     interruptSocks5Recv = interrupt;
 }
+
+// InterruptSocks5 ]

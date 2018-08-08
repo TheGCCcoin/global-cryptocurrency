@@ -1722,8 +1722,8 @@ https://www.transifex.com/projects/p/TheGCCcoin/</translation>
         <translation>Ammontare e Round:</translation>
     </message>
     <message>
-        <source>0 TheGCCcoin / 0 Rounds</source>
-        <translation>0 TheGCCcoin / 0 Round</translation>
+        <source>0 TheGCC / 0 Rounds</source>
+        <translation>0 TheGCC / 0 Round</translation>
     </message>
     <message>
         <source>Submitted Denom:</source>

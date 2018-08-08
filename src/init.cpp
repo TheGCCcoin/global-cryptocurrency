@@ -213,6 +213,8 @@ void Interrupt(boost::thread_group& threadGroup)
     threadGroup.interrupt_all();
 }
 
+// PrepareShutdown [
+
 /** Preparing steps before shutting down or restarting the wallet */
 void PrepareShutdown()
 {
@@ -232,10 +234,19 @@ void PrepareShutdown()
     StopREST();
     StopRPC();
     StopHTTPServer();
+
+    // ENABLE_WALLET [
+
 #ifdef ENABLE_WALLET
     if (pwalletMain)
         pwalletMain->Flush(false);
+    // stop GenerateBitcoins [
+    GenerateBitcoins(false, NULL, 0);
+    // stop GenerateBitcoins ]
 #endif
+
+    // ENABLE_WALLET ]
+
     MapPort(false);
     UnregisterValidationInterface(peerLogic.get());
     peerLogic.reset();
@@ -310,6 +321,8 @@ void PrepareShutdown()
 #endif
     UnregisterAllValidationInterfaces();
 }
+
+// PrepareShutdown ]
 
 /**
 * Shutdown is split into 2 parts:
@@ -1638,6 +1651,19 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                     strLoadError = _("Error loading block database");
                     break;
                 }
+
+                // l.2.1 dump mapBlockIndex [
+                {
+                    std::wostringstream ss;
+                    ss << L"mapBlockIndex count=" << mapBlockIndex.size() << "\n";
+                    ss << "hashes:" << "\n";
+
+                    for (auto it = mapBlockIndex.begin(); it != mapBlockIndex.end(); it++)
+                        ss << it->first.GetHex().c_str() << "\n";
+
+                    llogLog(L"Init", ss.str());
+                }
+                // l.2.1 dump mapBlockIndex ]
 
                 // If the loaded chain has a wrong genesis, bail out immediately
                 // (we're likely using a testnet datadir, or the other way around).

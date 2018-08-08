@@ -1,6 +1,7 @@
 // Copyright (c) 2014-2017 The GCC Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// @ [
 
 #include "activemasternode.h"
 #include "checkpoints.h"
@@ -16,14 +17,24 @@
 #include "ui_interface.h"
 #include "util.h"
 
+// @ ]
+// CMasternodeSync [
+// vars [
+
 class CMasternodeSync;
 CMasternodeSync masternodeSync;
+
+// vars ]
+// Fail [
 
 void CMasternodeSync::Fail()
 {
     nTimeLastFailure = GetTime();
     nRequestedMasternodeAssets = MASTERNODE_SYNC_FAILED;
 }
+
+// Fail ]
+// Reset [
 
 void CMasternodeSync::Reset()
 {
@@ -34,12 +45,18 @@ void CMasternodeSync::Reset()
     nTimeLastFailure = 0;
 }
 
+// Reset ]
+// BumpAssetLastTime [
+
 void CMasternodeSync::BumpAssetLastTime(const std::string& strFuncName)
 {
     if(IsSynced() || IsFailed()) return;
     nTimeLastBumped = GetTime();
     LogPrint("mnsync", "CMasternodeSync::BumpAssetLastTime -- %s\n", strFuncName);
 }
+
+// BumpAssetLastTime ]
+// GetAssetName [
 
 std::string CMasternodeSync::GetAssetName()
 {
@@ -55,6 +72,9 @@ std::string CMasternodeSync::GetAssetName()
         default:                            return "UNKNOWN";
     }
 }
+
+// GetAssetName ]
+// SwitchToNextAsset [
 
 void CMasternodeSync::SwitchToNextAsset(CConnman& connman)
 {
@@ -101,6 +121,9 @@ void CMasternodeSync::SwitchToNextAsset(CConnman& connman)
     BumpAssetLastTime("CMasternodeSync::SwitchToNextAsset");
 }
 
+// SwitchToNextAsset ]
+// GetSyncStatus [
+
 std::string CMasternodeSync::GetSyncStatus()
 {
     switch (masternodeSync.nRequestedMasternodeAssets) {
@@ -114,6 +137,9 @@ std::string CMasternodeSync::GetSyncStatus()
         default:                            return "";
     }
 }
+
+// GetSyncStatus ]
+// ProcessMessage [
 
 void CMasternodeSync::ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv)
 {
@@ -129,6 +155,9 @@ void CMasternodeSync::ProcessMessage(CNode* pfrom, const std::string& strCommand
         LogPrintf("SYNCSTATUSCOUNT -- got inventory count: nItemID=%d  nCount=%d  peer=%d\n", nItemID, nCount, pfrom->id);
     }
 }
+
+// ProcessMessage ]
+// ProcessTick [
 
 void CMasternodeSync::ProcessTick(CConnman& connman)
 {
@@ -390,6 +419,9 @@ void CMasternodeSync::ProcessTick(CConnman& connman)
     connman.ReleaseNodeVector(vNodesCopy);
 }
 
+// ProcessTick ]
+// SendGovernanceSyncRequest [
+
 void CMasternodeSync::SendGovernanceSyncRequest(CNode* pnode, CConnman& connman)
 {
     CNetMsgMaker msgMaker(pnode->GetSendVersion());
@@ -405,6 +437,9 @@ void CMasternodeSync::SendGovernanceSyncRequest(CNode* pnode, CConnman& connman)
     }
 }
 
+// SendGovernanceSyncRequest ]
+// AcceptedBlockHeader [
+
 void CMasternodeSync::AcceptedBlockHeader(const CBlockIndex *pindexNew)
 {
     LogPrint("mnsync", "CMasternodeSync::AcceptedBlockHeader -- pindexNew->nHeight: %d\n", pindexNew->nHeight);
@@ -414,6 +449,9 @@ void CMasternodeSync::AcceptedBlockHeader(const CBlockIndex *pindexNew)
         BumpAssetLastTime("CMasternodeSync::AcceptedBlockHeader");
     }
 }
+
+// AcceptedBlockHeader ]
+// NotifyHeaderTip [
 
 void CMasternodeSync::NotifyHeaderTip(const CBlockIndex *pindexNew, bool fInitialDownload, CConnman& connman)
 {
@@ -427,6 +465,9 @@ void CMasternodeSync::NotifyHeaderTip(const CBlockIndex *pindexNew, bool fInitia
         BumpAssetLastTime("CMasternodeSync::NotifyHeaderTip");
     }
 }
+
+// NotifyHeaderTip ]
+// UpdatedBlockTip [
 
 void CMasternodeSync::UpdatedBlockTip(const CBlockIndex *pindexNew, bool fInitialDownload, CConnman& connman)
 {
@@ -479,3 +520,6 @@ void CMasternodeSync::UpdatedBlockTip(const CBlockIndex *pindexNew, bool fInitia
         SwitchToNextAsset(connman);
     }
 }
+
+// UpdatedBlockTip ]
+// CMasternodeSync ]

@@ -1019,6 +1019,8 @@ bool EvalScript(std::vector<std::vector<unsigned char> >& stack, const CScript& 
 
 namespace {
 
+    // CTransactionSignatureSerializer [
+
 /**
  * Wrapper that serializes like CTransaction, but with the modifications
  *  required for the signature hash done in-place
@@ -1099,6 +1101,15 @@ public:
     void Serialize(S &s) const {
         // Serialize nVersion
         ::Serialize(s, txTo.nVersion);
+
+        // f.8 fix nTime !!! [
+
+//        if (nVersion == 6) {
+        ::Serialize(s, txTo.nTime);
+//        }
+
+        // f.8 fix nTime !!! ]
+
         // Serialize vin
         unsigned int nInputs = fAnyoneCanPay ? 1 : txTo.vin.size();
         ::WriteCompactSize(s, nInputs);
@@ -1113,8 +1124,14 @@ public:
         ::Serialize(s, txTo.nLockTime);
     }
 };
+    // CTransactionSignatureSerializer ]
 
 } // anon namespace
+
+#include "streams.h"
+#include <sstream>
+
+// SignatureHash [
 
 uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType)
 {
@@ -1138,8 +1155,32 @@ uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsig
     // Serialize and hash
     CHashWriter ss(SER_GETHASH, 0);
     ss << txTmp << nHashType;
+
+    // l.13 llog SignatureHash [
+/*
+    CDataStream ssX(SER_GETHASH, 0);
+    ssX << txTmp << nHashType;
+
+    std::vector<char> v = std::vector<char>(ssX.begin(), ssX.end());
+
+    llogLog(L"SignatureHash", L"ss", static_cast<const void*>(v.data()), v.size(), 0);
+    std::wostringstream ss1;
+//    ss1 << "\n" << v.size() << "\nCHashWriter hash " << ss.GetHash().GetHex().c_str(); // !!! ss.GetHash() 1 call -> dd4df8f912e2f58219ff134d4638b35e1f01e50530d9e2954cbe7fd04e4928ff
+//    ss1 << "\n" << v.size() << "\nCHashWriter hash " << ss.GetHash().GetHex().c_str(); // !!! ss.GetHash() 2 call -> 21f340663eb304a14c6c6cc9081cd1b7517e662c97e111d002c5a9c3e4ba5fec
+    ss1 << "\n" << v.size() << "\nCHashWriter hash " << Hash(ssX.begin(), ssX.end()).GetHex().c_str();
+    llogLog(L"SignatureHash", ss1.str());
+*/
+    static int totalSignatureHash = 0;
+
+    if (totalSignatureHash++ % 1000 == 0)
+        llogLog(L"SignatureHash/Total", L"count", totalSignatureHash, true);
+
+    // l.13 llog SignatureHash ]
+
     return ss.GetHash();
 }
+
+// SignatureHash ]
 
 bool TransactionSignatureChecker::VerifySignature(const std::vector<unsigned char>& vchSig, const CPubKey& pubkey, const uint256& sighash) const
 {
@@ -1249,6 +1290,8 @@ bool TransactionSignatureChecker::CheckSequence(const CScriptNum& nSequence) con
     return true;
 }
 
+// VerifyScript [
+
 bool VerifyScript(const CScript& scriptSig, const CScript& scriptPubKey, unsigned int flags, const BaseSignatureChecker& checker, ScriptError* serror)
 {
     set_error(serror, SCRIPT_ERR_UNKNOWN_ERROR);
@@ -1313,3 +1356,5 @@ bool VerifyScript(const CScript& scriptSig, const CScript& scriptPubKey, unsigne
 
     return set_success(serror);
 }
+
+// VerifyScript ]

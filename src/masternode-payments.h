@@ -170,6 +170,8 @@ public:
     std::string ToString() const;
 };
 
+// CMasternodePayments [
+
 //
 // Masternode Payments Class
 // Keeps track of who should get paid for which blocks
@@ -223,6 +225,13 @@ public:
     void ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman);
     std::string GetRequiredPaymentsString(int nBlockHeight) const;
     void FillBlockPayee(CMutableTransaction& txNew, int nBlockHeight, CAmount blockReward, CTxOut& txoutMasternodeRet) const;
+
+    // m.3 pos: FillBlockPayee [
+
+    void FillBlockPayee(CMutableTransaction& txNew, CAmount nFees, bool fProofOfStake);
+
+    // m.3 pos: FillBlockPayee ]
+
     std::string ToString() const;
 
     int GetBlockCount() const { return mapMasternodeBlocks.size(); }
@@ -233,5 +242,7 @@ public:
 
     void UpdatedBlockTip(const CBlockIndex *pindex, CConnman& connman);
 };
+
+// CMasternodePayments ]
 
 #endif

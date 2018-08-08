@@ -86,6 +86,7 @@ class CReserveKey;
 class CScript;
 class CTxMemPool;
 class CWalletTx;
+class CStakeInput;
 
 /** (client) version numbers for particular wallet features */
 enum WalletFeature
@@ -106,7 +107,8 @@ enum AvailableCoinsType
     ONLY_DENOMINATED,
     ONLY_NONDENOMINATED,
     ONLY_1000, // find masternode outputs including locked ones (use with caution)
-    ONLY_PRIVATESEND_COLLATERAL
+    ONLY_PRIVATESEND_COLLATERAL,
+    STAKABLE_COINS = 6                          // UTXO's that are valid for staking
 };
 
 struct CompactTallyItem
@@ -207,6 +209,10 @@ struct COutputEntry
     int vout;
 };
 
+// CMerkleTx [
+
+// b.X! CMerkleTx is not CMerkleTx : CTransaction ! [
+
 /** A transaction with a merkle branch linking it to the block chain. */
 class CMerkleTx
 {
@@ -283,7 +289,17 @@ public:
 
     const uint256& GetHash() const { return tx->GetHash(); }
     bool IsCoinBase() const { return tx->IsCoinBase(); }
+
+    // p.5.1.a IsCoinBase ]
+
+    bool IsCoinStake() const { return tx->IsCoinStake(); }
+
+    // p.5.1.a IsCoinBase ]
 };
+
+// b.X! CMerkleTx is not CMerkleTx : CTransaction ! ]
+
+// CMerkleTx ]
 
 /** 
  * A transaction with a bunch of additional info that only the owner cares about.
@@ -621,6 +637,7 @@ private:
     std::vector<char> _ssExtra;
 };
 
+// CWallet [
 
 /** 
  * A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
@@ -1011,6 +1028,8 @@ public:
 
     bool UpdatedTransaction(const uint256 &hashTx) override;
 
+    // wallet::Inventory(hash) signal -> mapRequestCount<hash>++ [
+
     void Inventory(const uint256 &hash) override
     {
         {
@@ -1020,13 +1039,20 @@ public:
                 (*mi).second++;
         }
     }
+    
+    // wallet::Inventory(hash) signal -> mapRequestCount<hash>++ ]
 
     void GetScriptForMining(boost::shared_ptr<CReserveScript> &script) override;
+    
+    // ResetRequestCount(hash) -> mapRequestCount<hash>=0 [
+    
     void ResetRequestCount(const uint256 &hash) override
     {
         LOCK(cs_wallet);
         mapRequestCount[hash] = 0;
     };
+
+    // ResetRequestCount(hash) -> mapRequestCount<hash>=0 ]
     
     unsigned int GetKeyPoolSize()
     {
@@ -1117,7 +1143,29 @@ public:
     bool SetHDChain(const CHDChain& chain, bool memonly);
     bool SetCryptedHDChain(const CHDChain& chain, bool memonly);
     bool GetDecryptedHDChain(CHDChain& hdChainRet);
+
+    // pos [
+
+    // g.8.2.2 pos: MintableCoins [
+
+    bool MintableCoins();
+
+    // g.8.2.2 pos: MintableCoins ]
+    // m.3.2 pos: CreateCoinStake [
+
+    bool CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int64_t nSearchInterval, CMutableTransaction& txNew, unsigned int& nTxNewTime);
+
+    // m.3.2 pos: CreateCoinStake ]
+    // m.4.2 pos: SelectStakeCoins [
+
+    bool SelectStakeCoins(std::list<std::unique_ptr<CStakeInput> >& listInputs, CAmount nTargetAmount);
+
+    // m.4.2 pos: SelectStakeCoins ]
+
+    // pos ]
 };
+
+// CWallet ]
 
 /** A key allocated from the key pool. */
 class CReserveKey : public CReserveScript

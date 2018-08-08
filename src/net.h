@@ -40,6 +40,9 @@ class CAddrMan;
 class CScheduler;
 class CNode;
 
+extern std::vector<CNode*> vNodes;
+extern CCriticalSection cs_vNodes;
+
 namespace boost {
     class thread_group;
 } // namespace boost
@@ -477,9 +480,14 @@ private:
     CCriticalSection cs_vAddedNodes;
     std::vector<CService> vPendingMasternodes;
     CCriticalSection cs_vPendingMasternodes;
-    std::vector<CNode*> vNodes;
     std::list<CNode*> vNodesDisconnected;
+
+    // r.1 vNodes global [
+    /*
+    std::vector<CNode*> vNodes;
     mutable CCriticalSection cs_vNodes;
+     */
+    // r.1 vNodes global ]
     std::atomic<NodeId> nLastNodeId;
 
     /** Services this instance offers */

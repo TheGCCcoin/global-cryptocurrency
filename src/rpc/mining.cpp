@@ -36,6 +36,19 @@
 
 #include <univalue.h>
 
+// rpc [
+
+// g.1.3 pos: pwalletMain [
+
+#ifdef ENABLE_WALLET
+
+#include "wallet/wallet.h"
+
+extern CWallet* pwalletMain;
+#endif // ENABLE_WALLET
+
+// g.1.3 pos: pwalletMain ]
+
 /**
  * Return average network hashes per second based on the last 'lookup' blocks,
  * or from the last difficulty change if 'lookup' is nonpositive.
@@ -100,6 +113,10 @@ UniValue getnetworkhashps(const JSONRPCRequest& request)
     return GetNetworkHashPS(request.params.size() > 0 ? request.params[0].get_int() : 120, request.params.size() > 1 ? request.params[1].get_int() : -1);
 }
 
+// g.1.1.1 disable dash generate generatetoaddress rpc [
+
+#if 0
+
 UniValue generateBlocks(boost::shared_ptr<CReserveScript> coinbaseScript, int nGenerate, uint64_t nMaxTries, bool keepScript)
 {
     static const int nInnerLoopCount = 0x10000;
@@ -117,7 +134,12 @@ UniValue generateBlocks(boost::shared_ptr<CReserveScript> coinbaseScript, int nG
     UniValue blockHashes(UniValue::VARR);
     while (nHeight < nHeightEnd)
     {
-        std::unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(Params()).CreateNewBlock(coinbaseScript->reserveScript));
+        // c.5.3.1 pos: -> CreateNewBlock [
+
+        std::unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(Params()).CreateNewBlock(coinbaseScript->reserveScript, false));
+
+        // c.5.3.1 pos: -> CreateNewBlock ]
+
         if (!pblocktemplate.get())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
         CBlock *pblock = &pblocktemplate->block;
@@ -218,6 +240,171 @@ UniValue generatetoaddress(const JSONRPCRequest& request)
 
     return generateBlocks(coinbaseScript, nGenerate, nMaxTries, false);
 }
+
+#endif
+
+// g.1.1.1 disable dash generate generatetoaddress rpc ]
+
+// g.1.4 pos wallet generate [
+
+// ENABLE_WALLET [
+
+#ifdef ENABLE_WALLET
+
+// getgenerate [
+
+UniValue getgenerate(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0)
+        throw std::runtime_error(
+            "getgenerate\n"
+            "\nReturn if the server is set to generate coins or not. The default is false.\n"
+            "It is set with the command line argument -gen (or pivx.conf setting gen)\n"
+            "It can also be set with the setgenerate call.\n"
+
+            "\nResult\n"
+            "true|false      (boolean) If the server is set to generate coins or not\n"
+
+            "\nExamples:\n" +
+            HelpExampleCli("getgenerate", "") + HelpExampleRpc("getgenerate", ""));
+
+    LOCK(cs_main);
+    return GetBoolArg("-gen", false);
+}
+
+// getgenerate ]
+// setgenerate [
+
+UniValue setgenerate(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() < 1 || request.params.size() > 2)
+        throw std::runtime_error(
+            "setgenerate generate ( genproclimit )\n"
+            "\nSet 'generate' true or false to turn generation on or off.\n"
+            "Generation is limited to 'genproclimit' processors, -1 is unlimited.\n"
+            "See the getgenerate call for the current setting.\n"
+
+            "\nArguments:\n"
+            "1. generate         (boolean, required) Set to true to turn on generation, false to turn off.\n"
+            "2. genproclimit     (numeric, optional) Set the processor limit for when generation is on. Can be -1 for unlimited.\n"
+            "                    Note: in -regtest mode, genproclimit controls how many blocks are generated immediately.\n"
+
+            "\nResult\n"
+            "[ blockhashes ]     (array, -regtest only) hashes of blocks generated\n"
+
+            "\nExamples:\n"
+            "\nSet the generation on with a limit of one processor\n" +
+            HelpExampleCli("setgenerate", "true 1") +
+            "\nCheck the setting\n" + HelpExampleCli("getgenerate", "") +
+            "\nTurn off generation\n" + HelpExampleCli("setgenerate", "false") +
+            "\nUsing json rpc\n" + HelpExampleRpc("setgenerate", "true, 1"));
+
+    if (pwalletMain == NULL)
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found (disabled)");
+
+    bool fGenerate = true;
+    if (request.params.size() > 0)
+        fGenerate = request.params[0].get_bool();
+
+    int nGenProcLimit = -1;
+    if (request.params.size() > 1) {
+        nGenProcLimit = request.params[1].get_int();
+        if (nGenProcLimit == 0)
+            fGenerate = false;
+    }
+
+    // -regtest mode: don't return until nGenProcLimit blocks are generated
+    if (fGenerate && Params().MineBlocksOnDemand()) {
+        int nHeightStart = 0;
+        int nHeightEnd = 0;
+        int nHeight = 0;
+        int nGenerate = (nGenProcLimit > 0 ? nGenProcLimit : 1);
+        CReserveKey reservekey(pwalletMain);
+
+        { // Don't keep cs_main locked
+            LOCK(cs_main);
+            nHeightStart = chainActive.Height();
+            nHeight = nHeightStart;
+            nHeightEnd = nHeightStart + nGenerate;
+        }
+        unsigned int nExtraNonce = 0;
+        UniValue blockHashes(UniValue::VARR);
+        while (nHeight < nHeightEnd) {
+            std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey, pwalletMain, false));
+            if (!pblocktemplate.get())
+                throw JSONRPCError(RPC_INTERNAL_ERROR, "Wallet keypool empty");
+            CBlock* pblock = &pblocktemplate->block;
+            {
+                LOCK(cs_main);
+                IncrementExtraNonce(pblock, chainActive.Tip(), nExtraNonce);
+            }
+            while (!CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus())) {
+                // Yes, there is a chance every nonce could fail to satisfy the -regtest
+                // target -- 1 in 2^(2^32). That ain't gonna happen.
+                ++pblock->nNonce;
+            }
+            CValidationState state;
+
+            // g.1.4.d1 ProcessNewBlock [
+
+            std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(*pblock);
+            if (!ProcessNewBlock(Params(), shared_pblock, true, NULL))
+//            if (!ProcessNewBlock(state, NULL, pblock))
+                throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
+
+            // g.1.4.d1 ProcessNewBlock ]
+
+            ++nHeight;
+            blockHashes.push_back(pblock->GetHash().GetHex());
+        }
+        return blockHashes;
+    }
+    else // Not -regtest: start generate thread, return immediately
+    {
+        // g.1.4.d2 ForceSetArg -gen -genproclimit [
+
+        ForceSetArg("-gen", fGenerate ? "1" : "0");
+        ForceSetArg("-genproclimit", itostr(nGenProcLimit));
+//        mapArgs["-gen"] = (fGenerate ? "1" : "0");
+//        mapArgs["-genproclimit"] = itostr(nGenProcLimit);
+
+        // g.1.4.d2 ForceSetArg -gen -genproclimit ]
+
+        GenerateBitcoins(fGenerate, pwalletMain, nGenProcLimit);
+    }
+
+    return NullUniValue;
+}
+
+// setgenerate ]
+// gethashespersec [
+
+UniValue gethashespersec(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0)
+        throw std::runtime_error(
+            "gethashespersec\n"
+            "\nReturns a recent hashes per second performance measurement while generating.\n"
+            "See the getgenerate and setgenerate calls to turn generation on and off.\n"
+
+            "\nResult:\n"
+            "n            (numeric) The recent hashes per second when generation is on (will return 0 if generation is off)\n"
+
+            "\nExamples:\n" +
+            HelpExampleCli("gethashespersec", "") + HelpExampleRpc("gethashespersec", ""));
+
+    if (GetTimeMillis() - nHPSTimerStart > 8000)
+        return (int64_t)0;
+    return (int64_t)dHashesPerSec;
+}
+
+// gethashespersec ]
+
+#endif
+
+// ENABLE_WALLET ]
+
+// g.1.4 pos wallet generate ]
 
 UniValue getmininginfo(const JSONRPCRequest& request)
 {
@@ -567,7 +754,13 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
 
         // Create new block
         CScript scriptDummy = CScript() << OP_TRUE;
-        pblocktemplate = BlockAssembler(Params()).CreateNewBlock(scriptDummy);
+
+        // c.5.3.2 pos: -> CreateNewBlock [
+
+        pblocktemplate = BlockAssembler(Params()).CreateNewBlock(scriptDummy, false);
+
+        // c.5.3.2 pos: -> CreateNewBlock ]
+
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
 
@@ -956,8 +1149,24 @@ static const CRPCCommand commands[] =
     { "mining",             "getblocktemplate",       &getblocktemplate,       true,  {"template_request"} },
     { "mining",             "submitblock",            &submitblock,            true,  {"hexdata","parameters"} },
 
+    // g.1.1 disable dash generate generatetoaddress rpc [
+
+#if 0
     { "generating",         "generate",               &generate,               true,  {"nblocks","maxtries"} },
     { "generating",         "generatetoaddress",      &generatetoaddress,      true,  {"nblocks","address","maxtries"} },
+#endif
+
+    // g.1.1 disable dash generate generatetoaddress rpc ]
+    // g.1.2 pos: generating [
+
+#ifdef ENABLE_WALLET
+    /* Coin generation */
+    { "generating",         "getgenerate",            &getgenerate,             true,  {} },
+    { "generating",         "gethashespersec",        &gethashespersec,         true,  {} },
+    { "generating",         "setgenerate",            &setgenerate,             true,  {"generate", "genproclimit"} },
+#endif
+
+    // g.1.2 pos: generating ]
 
     { "util",               "estimatefee",            &estimatefee,            true,  {"nblocks"} },
     { "util",               "estimatepriority",       &estimatepriority,       true,  {"nblocks"} },
@@ -970,3 +1179,5 @@ void RegisterMiningRPCCommands(CRPCTable &t)
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
         t.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }
+
+// rpc ]

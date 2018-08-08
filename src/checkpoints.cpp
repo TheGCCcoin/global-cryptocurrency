@@ -30,4 +30,14 @@ namespace Checkpoints {
         return NULL;
     }
 
+    // b.4.1.1 GetTotalBlocksEstimate [
+
+    int GetTotalBlocksEstimate()
+    {
+        int nHeight = Params().Checkpoints().mapCheckpoints.rbegin()->first;
+        return nHeight;
+    }
+
+    // b.4.1.1 GetTotalBlocksEstimate ]
+
 } // namespace Checkpoints

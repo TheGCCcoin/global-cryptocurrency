@@ -68,6 +68,7 @@ public:
     }
 };
 
+// CBlock [
 
 class CBlock : public CBlockHeader
 {
@@ -75,10 +76,23 @@ public:
     // network and disk
     std::vector<CTransactionRef> vtx;
 
+    // p.1.1 vchBlockSig var [
+
+    // ppcoin: block signature - signed by one of the coin base txout[N]'s owner
+    std::vector<unsigned char> vchBlockSig;
+
+    // p.1.1 vchBlockSig var ]
+
     // memory only
     mutable CTxOut txoutMasternode; // masternode payment
     mutable std::vector<CTxOut> voutSuperblock; // superblock payment
     mutable bool fChecked;
+
+    // p.2.3 merkle tree [
+
+    mutable std::vector<uint256> vMerkleTree;
+
+    // p.2.3 merkle tree ]
 
     CBlock()
     {
@@ -97,6 +111,36 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(*(CBlockHeader*)this);
         READWRITE(vtx);
+
+        // p.1.2 vchBlockSig ser - review! [
+        // old-gcc [
+
+        // ConnectBlock depends on vtx following header to generate CDiskTxPos
+        /*
+        if (!(nType & (SER_GETHASH|SER_BLOCKHEADERONLY)))
+        {
+            READWRITE(vchBlockSig);
+        }
+        else if (fRead)
+        {
+            const_cast<CBlock*>(this)->vtx.clear();
+            const_cast<CBlock*>(this)->vchBlockSig.clear();
+        }
+        */
+
+        // old-gcc ]
+        // pivx [
+
+//        if(vtx.size() > 1 && vtx[1].IsCoinStake())
+//            READWRITE(vchBlockSig);
+
+        // pivx ]
+        // blk! [
+
+        READWRITE(vchBlockSig);
+
+        // blk! ]
+        // p.1.2 vchBlockSig ser - review! ]
     }
 
     void SetNull()
@@ -105,6 +149,13 @@ public:
         vtx.clear();
         txoutMasternode = CTxOut();
         voutSuperblock.clear();
+
+        // p.1.3 vchBlockSig clear [
+
+        vchBlockSig.clear();
+
+        // p.1.3 vchBlockSig clear ]
+
         fChecked = false;
     }
 
@@ -120,9 +171,39 @@ public:
         return block;
     }
 
+    // p.1.4 pos methods [
+
+    // ppcoin: two types of block: proof-of-work or proof-of-stake
+    bool IsProofOfStake() const
+    {
+        return (vtx.size() > 1 && vtx[1]->IsCoinStake());
+    }
+
+    bool IsProofOfWork() const
+    {
+        return !IsProofOfStake();
+    }
+
+    // p.1.4 pos methods ]
+    // p.2.2 BuildMerkleTree [
+
+    // Build the in-memory merkle tree for this block and return the merkle root.
+    // If non-NULL, *mutated is set to whether mutation was detected in the merkle
+    // tree (a duplication of transactions in the block leading to an identical
+    // merkle root).
+    uint256 BuildMerkleTree(bool* mutated = NULL) const;
+
+    // p.2.2 BuildMerkleTree [
+    // b.3 CheckBlockSignature [
+
+    bool CheckBlockSignature() const;
+
+    // b.3 CheckBlockSignature ]
+
     std::string ToString() const;
 };
 
+// CBlock ]
 
 /** Describes a place in the block chain to another node such that if the
  * other node doesn't have the same branch, it can find a recent common trunk.
