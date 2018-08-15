@@ -16,6 +16,8 @@
 
 #include <boost/thread.hpp>
 
+#include "livelog/llog-dump.h"
+
 static const char DB_COIN = 'C';
 static const char DB_COINS = 'c';
 static const char DB_BLOCK_FILES = 'f';
@@ -181,6 +183,8 @@ void CCoinsViewDBCursor::Next()
     }
 }
 
+// CBlockTreeDB::WriteBatchSync [
+
 bool CBlockTreeDB::WriteBatchSync(const std::vector<std::pair<int, const CBlockFileInfo*> >& fileInfo, int nLastFile, const std::vector<const CBlockIndex*>& blockinfo) {
     CDBBatch batch(*this);
     for (std::vector<std::pair<int, const CBlockFileInfo*> >::const_iterator it=fileInfo.begin(); it != fileInfo.end(); it++) {
@@ -190,8 +194,23 @@ bool CBlockTreeDB::WriteBatchSync(const std::vector<std::pair<int, const CBlockF
     for (std::vector<const CBlockIndex*>::const_iterator it=blockinfo.begin(); it != blockinfo.end(); it++) {
         batch.Write(std::make_pair(DB_BLOCK_INDEX, (*it)->GetBlockHash()), CDiskBlockIndex(*it));
     }
+
+    // fileInfo [
+    // fileInfo ]
+    // blockinfo [
+    // blockinfo ]
+    // batch [
+
+    llogLog(L"txdb.cpp/WriteBatchSync", L"batch.SizeEstimate ", batch.SizeEstimate());
+    llogLog(L"txdb.cpp/WriteBatchSync", L"CBlockFileInfo.count ", fileInfo.size());
+    llogLog(L"txdb.cpp/WriteBatchSync", L"CBlockIndex.count ", blockinfo.size());
+
+    // batch ]
+
     return WriteBatch(batch, true);
 }
+
+// CBlockTreeDB::WriteBatchSync ]
 
 bool CBlockTreeDB::ReadTxIndex(const uint256 &txid, CDiskTxPos &pos) {
     return Read(std::make_pair(DB_TXINDEX, txid), pos);
@@ -344,11 +363,15 @@ bool CBlockTreeDB::ReadFlag(const std::string &name, bool &fValue) {
     return true;
 }
 
+// LoadBlockIndexGuts [
+
 bool CBlockTreeDB::LoadBlockIndexGuts(boost::function<CBlockIndex*(const uint256&)> insertBlockIndex)
 {
     std::unique_ptr<CDBIterator> pcursor(NewIterator());
 
     pcursor->Seek(std::make_pair(DB_BLOCK_INDEX, uint256()));
+
+    int count = 0;
 
     // Load mapBlockIndex
     while (pcursor->Valid()) {
@@ -371,9 +394,45 @@ bool CBlockTreeDB::LoadBlockIndexGuts(boost::function<CBlockIndex*(const uint256
                 pindexNew->nNonce         = diskindex.nNonce;
                 pindexNew->nStatus        = diskindex.nStatus;
                 pindexNew->nTx            = diskindex.nTx;
-
+/*
                 if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus()))
                     return error("%s: CheckProofOfWork failed: %s", __func__, pindexNew->ToString());
+*/
+                // p.7 pos block index [
+
+                //Proof Of Stake
+                pindexNew->nMint = diskindex.nMint;
+                pindexNew->nMoneySupply = diskindex.nMoneySupply;
+                pindexNew->nFlags = diskindex.nFlags;
+                pindexNew->nStakeModifier = diskindex.nStakeModifier;
+                pindexNew->prevoutStake = diskindex.prevoutStake;
+                pindexNew->nStakeTime = diskindex.nStakeTime;
+                pindexNew->hashProofOfStake = diskindex.hashProofOfStake;
+
+//                llogLog(L"txdb/LoadBlockIndexGuts", L"index", *pindexNew);
+//                llogLog(L"txdb/LoadBlockIndexGuts/block", L"index", pindexNew->GetBlockHash().ToString());
+                if (count++ % 1000 == 0) {
+                    llogLog(L"txdb/LoadBlockIndexGuts/count", L"count", count, true);
+                }
+
+                if (pindexNew->IsProofOfStake()) {
+                    // pos
+                }
+                else {
+                    // pow
+                    if (pindexNew->nHeight <= Params().LAST_POW_BLOCK()) {
+                        if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus())) {
+                            llogLog(L"txdb/LoadBlockIndexGuts/count", L"count", count, true);
+                            llogLog(L"txdb/LoadBlockIndexGuts/error", L"error pow index", *pindexNew);
+                            return error("LoadBlockIndex() : CheckProofOfWork failed: %s", pindexNew->ToString());
+                        }
+                    }
+                }
+                // ppcoin: build setStakeSeen
+//                if (pindexNew->IsProofOfStake())
+//                    setStakeSeen.insert(make_pair(pindexNew->prevoutStake, pindexNew->nStakeTime));
+
+                // p.7 pos block index ]
 
                 pcursor->Next();
             } else {
@@ -386,6 +445,8 @@ bool CBlockTreeDB::LoadBlockIndexGuts(boost::function<CBlockIndex*(const uint256
 
     return true;
 }
+
+// LoadBlockIndexGuts ]
 
 namespace {
 

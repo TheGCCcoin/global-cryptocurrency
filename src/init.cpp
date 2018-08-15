@@ -721,6 +721,8 @@ void CleanupBlockRevFiles()
     }
 }
 
+// ThreadImport [
+
 void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
 {
     const CChainParams& chainparams = Params();
@@ -790,6 +792,8 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
     LoadMempool();
     fDumpMempoolLater = !fRequestShutdown;
 }
+
+// ThreadImport ]
 
 /** Sanity checks
  *  Ensure that GCC Core is running in a usable environment with all

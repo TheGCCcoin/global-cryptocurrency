@@ -92,7 +92,7 @@ unsigned int CUTOFF_POW_TIME = 1905125188;
 // Thu Oct  9 00:00:00 2014 MST
 static const unsigned int STEALTH_ADDR_KICK_IN = 1912834400;
 
-static const unsigned int VERSION2_SWITCH_TIME = 1500336002; // GMT: Tuesday, 18 July 2017  20%
+unsigned int VERSION2_SWITCH_TIME = 1500336002; // GMT: Tuesday, 18 July 2017  20%
 static const unsigned int POS_REWARDS_SWITCH_TIME3 = 1523318400; // 10.04.2018 - 18%
 static const unsigned int POS_REWARDS_SWITCH_TIME4 = 1554854400; // 10.04.2019 - 16%
 static const unsigned int POS_REWARDS_SWITCH_TIME5 = 1586476800; // 10.04-2020 - 14%
@@ -170,7 +170,7 @@ static CBigNum GetProofOfStakeLimit(unsigned int nTime)
 // ppcoin: find last block index up to pindex
 const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfStake)
 {
-    while (pindex && pindex->pprev && (pindex->IsProofOfStake() != fProofOfStake))
+    while (pindex && pindex->pprev && (pindex->IsProofOfStake2() != fProofOfStake))
         pindex = pindex->pprev;
     return pindex;
 }

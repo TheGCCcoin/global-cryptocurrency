@@ -115,7 +115,7 @@ const std::string strMessageMagic = "DarkCoin Signed Message:\n";
 // Internal stuff
 // Internal stuff CBlockIndexWorkComparator [
 
-namespace {
+//namespace {
 
     struct CBlockIndexWorkComparator
     {
@@ -154,11 +154,6 @@ namespace {
     CCriticalSection cs_LastBlockFile;
     std::vector<CBlockFileInfo> vinfoBlockFile;
     int nLastBlockFile = 0;
-    /** Global flag to indicate we should check to see if there are
-     *  block/undo files that should be deleted.  Set on startup
-     *  or if we allocate more file space when we're in prune mode
-     */
-    bool fCheckForPruning = false;
 
     /**
      * Every received block is assigned a unique and increasing identifier, so we
@@ -177,7 +172,13 @@ namespace {
 
     /** Dirty block file entries. */
     std::set<int> setDirtyFileInfo;
-} // anon namespace
+//} // anon namespace
+
+/** Global flag to indicate we should check to see if there are
+ *  block/undo files that should be deleted.  Set on startup
+ *  or if we allocate more file space when we're in prune mode
+ */
+bool fCheckForPruning = false;
 
 // Internal stuff CBlockIndexWorkComparator ]
 // MemPoolConflictRemovalTracker [
@@ -251,7 +252,7 @@ enum FlushStateMode {
 };
 
 // See definition for documentation
-bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode, int nManualPruneHeight=0);
+bool FlushStateToDisk(CValidationState &state, FlushStateMode mode, int nManualPruneHeight=0);
 void FindFilesToPruneManual(std::set<int>& setFilesToPrune, int nManualPruneHeight);
 
 // FlushState ]
@@ -1273,8 +1274,10 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
             return true;
         }
 
-        // transaction not found in index, nothing more can be done
-        return false;
+        if (fAllowSlow) {
+            // transaction not found in index, nothing more can be done
+            return false;
+        }
     }
 
     if (fAllowSlow) { // use coin database to locate block that contains transaction, and scan it
@@ -1354,9 +1357,15 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos, const Consensus:
         return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
     }
 
+    // f.12 pos disable CheckProofOfWork [
+
     // Check the header
-    if (!CheckProofOfWork(block.GetHash(), block.nBits, consensusParams))
-        return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+    if (block.IsProofOfWork()) {
+        if (!CheckProofOfWork(block.GetHash(), block.nBits, consensusParams))
+            return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+    }
+
+    // f.12 pos disable CheckProofOfWork ]
 
     return true;
 }
@@ -2277,7 +2286,7 @@ static int64_t nTimeTotal = 0;
  * if they're too large, if it's been a while since the last write,
  * or always and in all cases if we're in prune mode and are deleting files.
  */
-bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode, int nManualPruneHeight) {
+bool FlushStateToDisk(CValidationState &state, FlushStateMode mode, int nManualPruneHeight) {
     int64_t nMempoolUsage = mempool.DynamicMemoryUsage();
     const CChainParams& chainparams = Params();
     LOCK2(cs_main, cs_LastBlockFile);
@@ -2401,6 +2410,8 @@ void PruneAndFlush() {
 /** Update chainActive and related internal data structures. */
 void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
     chainActive.SetTip(pindexNew);
+
+    llog_blockIndexUpdateTip(pindexNew, chainParams);
 
     // New best block
     mempool.AddTransactionsUpdated(1);
@@ -3038,101 +3049,8 @@ bool ResetBlockFailureFlags(CBlockIndex *pindex) {
 }
 
 // ResetBlockFailureFlags ]
-// AddToBlockIndex [
 
-CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
-{
-    // Check for duplicate
-    uint256 hash = block.GetHash();
-    BlockMap::iterator it = mapBlockIndex.find(hash);
-    if (it != mapBlockIndex.end())
-        return it->second;
 
-    // Construct new block index object
-    CBlockIndex* pindexNew = new CBlockIndex(block);
-    assert(pindexNew);
-    // We assign the sequence id to blocks only when the full data is available,
-    // to avoid miners withholding blocks but broadcasting headers, to get a
-    // competitive advantage.
-    pindexNew->nSequenceId = 0;
-
-    //x l.5.1 AddToBlockIndex [
-
-    //llogLog(L"validation.cpp/AddToBlockIndex", L"hash", hash.GetHex());
-    //llogLog(L"validation.cpp/AddToBlockIndex", L"InsertBlockIndex", *pindexNew);
-
-    //x l.5.1 AddToBlockIndex ]
-
-    BlockMap::iterator mi = mapBlockIndex.insert(std::make_pair(hash, pindexNew)).first;
-    pindexNew->phashBlock = &((*mi).first);
-    BlockMap::iterator miPrev = mapBlockIndex.find(block.hashPrevBlock);
-    if (miPrev != mapBlockIndex.end())
-    {
-        pindexNew->pprev = (*miPrev).second;
-        pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
-        pindexNew->BuildSkip();
-    }
-    pindexNew->nTimeMax = (pindexNew->pprev ? std::max(pindexNew->pprev->nTimeMax, pindexNew->nTime) : pindexNew->nTime);
-    pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
-    pindexNew->RaiseValidity(BLOCK_VALID_TREE);
-    if (pindexBestHeader == NULL || pindexBestHeader->nChainWork < pindexNew->nChainWork)
-        pindexBestHeader = pindexNew;
-
-    setDirtyBlockIndex.insert(pindexNew);
-
-    return pindexNew;
-}
-
-// AddToBlockIndex ]
-// ReceivedBlockTransactions [
-
-/** Mark a block as having its data received and checked (up to BLOCK_VALID_TRANSACTIONS). */
-bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBlockIndex *pindexNew, const CDiskBlockPos& pos)
-{
-    pindexNew->nTx = block.vtx.size();
-    pindexNew->nChainTx = 0;
-    pindexNew->nFile = pos.nFile;
-    pindexNew->nDataPos = pos.nPos;
-    pindexNew->nUndoPos = 0;
-    pindexNew->nStatus |= BLOCK_HAVE_DATA;
-    pindexNew->RaiseValidity(BLOCK_VALID_TRANSACTIONS);
-    setDirtyBlockIndex.insert(pindexNew);
-
-    if (pindexNew->pprev == NULL || pindexNew->pprev->nChainTx) {
-        // If pindexNew is the genesis block or all parents are BLOCK_VALID_TRANSACTIONS.
-        std::deque<CBlockIndex*> queue;
-        queue.push_back(pindexNew);
-
-        // Recursively process any descendant blocks that now may be eligible to be connected.
-        while (!queue.empty()) {
-            CBlockIndex *pindex = queue.front();
-            queue.pop_front();
-            pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
-            {
-                LOCK(cs_nBlockSequenceId);
-                pindex->nSequenceId = nBlockSequenceId++;
-            }
-            if (chainActive.Tip() == NULL || !setBlockIndexCandidates.value_comp()(pindex, chainActive.Tip())) {
-                setBlockIndexCandidates.insert(pindex);
-            }
-            std::pair<std::multimap<CBlockIndex*, CBlockIndex*>::iterator, std::multimap<CBlockIndex*, CBlockIndex*>::iterator> range = mapBlocksUnlinked.equal_range(pindex);
-            while (range.first != range.second) {
-                std::multimap<CBlockIndex*, CBlockIndex*>::iterator it = range.first;
-                queue.push_back(it->second);
-                range.first++;
-                mapBlocksUnlinked.erase(it);
-            }
-        }
-    } else {
-        if (pindexNew->pprev && pindexNew->pprev->IsValid(BLOCK_VALID_TREE)) {
-            mapBlocksUnlinked.insert(std::make_pair(pindexNew->pprev, pindexNew));
-        }
-    }
-
-    return true;
-}
-
-// ReceivedBlockTransactions ]
 // FindBlockPos [
 
 bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false)
@@ -3611,7 +3529,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Co
 // ContextualCheckBlock ]
 // AcceptBlockHeader [
 
-static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex)
+bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex)
 {
     AssertLockHeld(cs_main);
     // Check for duplicate
@@ -3698,89 +3616,7 @@ bool ProcessNewBlockHeaders(const std::vector<CBlockHeader>& headers, CValidatio
 }
 
 // ProcessNewBlockHeaders ]
-// AcceptBlock [
 
-/** Store block on disk. If dbp is non-NULL, the file is known to already reside on disk */
-bool AcceptBlock(const std::shared_ptr<const CBlock>& pblock, CValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex, bool fRequested, const CDiskBlockPos* dbp, bool* fNewBlock)
-{
-    const CBlock& block = *pblock;
-
-    if (fNewBlock) *fNewBlock = false;
-    AssertLockHeld(cs_main);
-
-    CBlockIndex *pindexDummy = NULL;
-    CBlockIndex *&pindex = ppindex ? *ppindex : pindexDummy;
-
-    if (!AcceptBlockHeader(block, state, chainparams, &pindex))
-        return false;
-
-    // Try to process all requested blocks that we don't have, but only
-    // process an unrequested block if it's new and has enough work to
-    // advance our tip, and isn't too many blocks ahead.
-    bool fAlreadyHave = pindex->nStatus & BLOCK_HAVE_DATA;
-    bool fHasMoreWork = (chainActive.Tip() ? pindex->nChainWork > chainActive.Tip()->nChainWork : true);
-    // Blocks that are too out-of-order needlessly limit the effectiveness of
-    // pruning, because pruning will not delete block files that contain any
-    // blocks which are too close in height to the tip.  Apply this test
-    // regardless of whether pruning is enabled; it should generally be safe to
-    // not process unrequested blocks.
-    bool fTooFarAhead = (pindex->nHeight > int(chainActive.Height() + MIN_BLOCKS_TO_KEEP));
-
-    // TODO: Decouple this function from the block download logic by removing fRequested
-    // This requires some new chain datastructure to efficiently look up if a
-    // block is in a chain leading to a candidate for best tip, despite not
-    // being such a candidate itself.
-
-    // TODO: deal better with return value and error conditions for duplicate
-    // and unrequested blocks.
-    if (fAlreadyHave) return true;
-    if (!fRequested) {  // If we didn't ask for it:
-        if (pindex->nTx != 0) return true;  // This is a previously-processed block that was pruned
-        if (!fHasMoreWork) return true;     // Don't process less-work chains
-        if (fTooFarAhead) return true;      // Block height is too high
-    }
-    if (fNewBlock) *fNewBlock = true;
-
-    if (!CheckBlock(block, state, chainparams.GetConsensus()) ||
-        !ContextualCheckBlock(block, state, chainparams.GetConsensus(), pindex->pprev)) {
-        if (state.IsInvalid() && !state.CorruptionPossible()) {
-            pindex->nStatus |= BLOCK_FAILED_VALID;
-            setDirtyBlockIndex.insert(pindex);
-        }
-        return error("%s: %s", __func__, FormatStateMessage(state));
-    }
-
-    // Header is valid/has work, merkle tree is good...RELAY NOW
-    // (but if it does not build on our best tip, let the SendMessages loop relay it)
-    if (!IsInitialBlockDownload() && chainActive.Tip() == pindex->pprev)
-        GetMainSignals().NewPoWValidBlock(pindex, pblock);
-
-    int nHeight = pindex->nHeight;
-
-    // Write block to history file
-    try {
-        unsigned int nBlockSize = ::GetSerializeSize(block, SER_DISK, CLIENT_VERSION);
-        CDiskBlockPos blockPos;
-        if (dbp != NULL)
-            blockPos = *dbp;
-        if (!FindBlockPos(state, blockPos, nBlockSize+8, nHeight, block.GetBlockTime(), dbp != NULL))
-            return error("AcceptBlock(): FindBlockPos failed");
-        if (dbp == NULL)
-            if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
-                AbortNode(state, "Failed to write block");
-        if (!ReceivedBlockTransactions(block, state, pindex, blockPos))
-            return error("AcceptBlock(): ReceivedBlockTransactions failed");
-    } catch (const std::runtime_error& e) {
-        return AbortNode(state, std::string("System error: ") + e.what());
-    }
-
-    if (fCheckForPruning)
-        FlushStateToDisk(state, FLUSH_STATE_NONE); // we just allocated more disk space for block files
-
-    return true;
-}
-
-// AcceptBlock ]
 // ProcessNewBlock - moved [
 /*
 bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock)
@@ -4071,12 +3907,12 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
     if (!pindexNew)
         throw std::runtime_error(std::string(__func__) + ": new CBlockIndex failed");
 
-    // l.4.1 InsertBlockIndex [
+    //x l.4.1 InsertBlockIndex [
 
-    llogLog(L"validation.cpp/InsertBlockIndex", L"hash", hash.GetHex());
-    llogLog(L"validation.cpp/InsertBlockIndex", L"InsertBlockIndex", *pindexNew);
+//    llogLog(L"validation.cpp/InsertBlockIndex", L"hash", hash.GetHex());
+//    llogLog(L"validation.cpp/InsertBlockIndex", L"InsertBlockIndex", *pindexNew);
 
-    // l.4.1 InsertBlockIndex ]
+    //x l.4.1 InsertBlockIndex ]
 
     mi = mapBlockIndex.insert(std::make_pair(hash, pindexNew)).first;
     pindexNew->phashBlock = &((*mi).first);
@@ -4089,8 +3925,12 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
 
 bool static LoadBlockIndexDB(const CChainParams& chainparams)
 {
+    // -> LoadBlockIndexGuts -> InsertBlockIndex [
+
     if (!pblocktree->LoadBlockIndexGuts(InsertBlockIndex))
         return false;
+
+    // -> LoadBlockIndexGuts -> InsertBlockIndex ]
 
     boost::this_thread::interruption_point();
 

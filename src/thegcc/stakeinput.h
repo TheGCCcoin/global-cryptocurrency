@@ -62,5 +62,7 @@ public:
     bool CreateTxOuts(CWallet* pwallet, std::vector<CTxOut>& vout, CAmount nTotal) override;
 };
 
+int64_t GetStakeModifierSelectionInterval();
+int64_t GetStakeModifierSelectionIntervalSection(int nSection);
 
 #endif //THEGCC_STAKEINPUT_H

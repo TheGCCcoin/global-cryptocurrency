@@ -73,6 +73,7 @@
 #include "thegcc/pos/Pos.h"
 #include "thegcc/masternode/Masternode.h"
 #include "thegcc/validation/Block.h"
+#include "thegcc/kernel/Kernel.h"
 
 // thegcc ]
 // 1 [

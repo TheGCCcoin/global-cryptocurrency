@@ -292,7 +292,9 @@ public:
         SetNull();
     }
 
-    CBlockIndex(const CBlockHeader& block)
+    // f.10 fix dash CBlockIndex(const CBlockHeader& block) -> pivx/thegcc-old CBlockIndex(const CBlock& block) [
+
+    CBlockIndex(const CBlock& block)
     {
         SetNull();
 
@@ -302,24 +304,47 @@ public:
         nBits          = block.nBits;
         nNonce         = block.nNonce;
 
-        //x c.4.4 pos: vars by block header - disabled by no vtx [
-        /*
+        // c.4.4 pos: vars by block header - disabled [
+
         if (block.IsProofOfStake())
         {
             SetProofOfStake();
-            prevoutStake = block.vtx[1].vin[0].prevout;
-            nStakeTime = block.vtx[1].nTime;
+            prevoutStake = block.vtx[1]->vin[0].prevout;
+            nStakeTime = block.vtx[1]->nTime;
         }
         else
         {
             prevoutStake.SetNull();
             nStakeTime = 0;
         }
-        */
-        //x c.4.4 pos: vars by block header - disabled by no vtx ]
+
+        // c.4.4 pos: vars by block header - disabled ]
     }
 
-    // CBlockIndex ]
+    // f.10 fix dash CBlockIndex(const CBlockHeader& block) -> pivx/thegcc-old CBlockIndex(const CBlock& block) ]
+
+    // f.11 pos updateBlock - for accept header - create index, accept block - update pos - todo: review [
+
+    bool updateBlock(const CBlock& block)
+    {
+        if (!phashBlock || block.GetHash() != *phashBlock)
+            return false;
+
+        if (block.IsProofOfStake())
+        {
+            SetProofOfStake();
+            prevoutStake = block.vtx[1]->vin[0].prevout;
+            nStakeTime = block.vtx[1]->nTime;
+        }
+        else
+        {
+            prevoutStake.SetNull();
+            nStakeTime = 0;
+        }
+        return true;
+    }
+
+    // f.11 pos updateBlock - for accept header - create index, accept block - update pos - todo: review ]
 
     CDiskBlockPos GetBlockPos() const {
         CDiskBlockPos ret;
@@ -395,6 +420,15 @@ public:
     {
         return !(nFlags & BLOCK_PROOF_OF_STAKE);
     }
+
+    // r.2 debug remove dup [
+
+    bool IsProofOfStake2() const
+    {
+        return (nFlags & BLOCK_PROOF_OF_STAKE);
+    }
+
+    // r.2 debug remove dup ]
 
     bool IsProofOfStake() const
     {
@@ -496,6 +530,8 @@ public:
     //! Efficiently find an ancestor of this block.
     CBlockIndex* GetAncestor(int height);
     const CBlockIndex* GetAncestor(int height) const;
+
+    uint256 GetBlockTrust() const;
 };
 
 // CBlockIndex ]
@@ -542,6 +578,24 @@ public:
             READWRITE(VARINT(nDataPos));
         if (nStatus & BLOCK_HAVE_UNDO)
             READWRITE(VARINT(nUndoPos));
+
+        // p.10 pos CDiskBlockIndex serialize [
+
+        READWRITE(nMint);
+        READWRITE(nMoneySupply);
+        READWRITE(nFlags);
+        READWRITE(nStakeModifier);
+
+        if (IsProofOfStake()) {
+            READWRITE(prevoutStake);
+            READWRITE(nStakeTime);
+        } else {
+            const_cast<CDiskBlockIndex*>(this)->prevoutStake.SetNull();
+            const_cast<CDiskBlockIndex*>(this)->nStakeTime = 0;
+            const_cast<CDiskBlockIndex*>(this)->hashProofOfStake = uint256();
+        }
+
+        // p.10 pos CDiskBlockIndex serialize ]
 
         // block hash
         READWRITE(hash);
@@ -593,10 +647,28 @@ public:
         return vChain.size() > 0 ? vChain[0] : NULL;
     }
 
+    // fix p.11 pivx pos update pindex CChain.Tip(bPos) [
+
     /** Returns the index entry for the tip of this chain, or NULL if none. */
-    CBlockIndex *Tip() const {
-        return vChain.size() > 0 ? vChain[vChain.size() - 1] : NULL;
+//    CBlockIndex *Tip() const {
+//        return vChain.size() > 0 ? vChain[vChain.size() - 1] : NULL;
+//    }
+
+    CBlockIndex* Tip(bool fProofOfStake = false) const
+    {
+        if (vChain.size() < 1)
+            return NULL;
+
+        CBlockIndex* pindex = vChain[vChain.size() - 1];
+
+        if (fProofOfStake) {
+            while (pindex && pindex->pprev && !pindex->IsProofOfStake())
+                pindex = pindex->pprev;
+        }
+        return pindex;
     }
+
+    // fix p.11 pivx pos update pindex CChain.Tip(bPos) ]
 
     /** Returns the index entry at a particular height in this chain, or NULL if no such height exists. */
     CBlockIndex *operator[](int nHeight) const {

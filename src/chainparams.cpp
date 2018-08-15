@@ -26,12 +26,17 @@
 // @ ]
 // *::CreateGenesisBlock [
 
-// f6.1 genesis.nBits = bnProofOfWorkLimit(~uint256(0) >> 20) = 0x1e0fffff [
+// f.6.1 genesis.nBits = bnProofOfWorkLimit(~uint256(0) >> 20) = 0x1e0fffff [
 
 //static CScriptNum bnProofOfWorkLimit(~uint256(0) >> 20);
 static uint32_t bnProofOfWorkLimit = 0x1e0fffff;
 
-// f6.1 genesis.nBits = bnProofOfWorkLimit(~uint256(0) >> 20) = 0x1e0fffff ]
+// f.6.1 genesis.nBits = bnProofOfWorkLimit(~uint256(0) >> 20) = 0x1e0fffff ]
+// f.9 thegcc-old CUTOFF_POW_BLOCK -> Params.LAST_POW_BLOCK [
+
+extern unsigned int CUTOFF_POW_BLOCK;
+
+// f.9 thegcc-old CUTOFF_POW_BLOCK -> Params.LAST_POW_BLOCK ]
 
 static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesisOutputScript, uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
@@ -180,14 +185,14 @@ public:
         // nMasternodeMinimumConfirmations [
         consensus.nMasternodeMinimumConfirmations = 15;
         // nMasternodeMinimumConfirmations ]
-                // bip34, bip65, bip66, dip0001 [
+        // bip34, bip65, bip66, dip0001 [
         consensus.BIP34Height = 951;
         consensus.BIP34Hash = uint256S("0x000001f35e70f7c5705f64c6c5cc3dea9449e74d5b5c7cf74dad1bcca14a8012");
         consensus.BIP65Height = 619382; // 00000000000076d8fcea02ec0963de4abfd01e771fec0863f960c2c64fe6f357
         consensus.BIP66Height = 245817; // 00000000000b1fa2dfa312863570e13fae9ca7b5566cb27e55422620b469aefa
         consensus.DIP0001Height = 782208;
-            // bip34, bip65, bip66, dip0001 ]
-                    // pow [
+        // bip34, bip65, bip66, dip0001 ]
+        // pow [
         consensus.powLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20
         consensus.nPowTargetTimespan = 24 * 60 * 60; // GCC: 1 day
         consensus.nPowTargetSpacing = 2.5 * 60; // GCC: 2.5 minutes
@@ -195,49 +200,49 @@ public:
         consensus.fPowNoRetargeting = false;
         consensus.nPowKGWHeight = 15200;
         consensus.nPowDGWHeight = 34140;
-            // pow ]
-                    // + [
+        // pow ]
+        // + [
         consensus.nRuleChangeActivationThreshold = 1916; // 95% of 2016
         consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
-            // + ]
-                    // vDeployments [
-                            // TESTDUMMY [
+        // + ]
+        // vDeployments [
+        // TESTDUMMY [
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 1199145601; // January 1, 2008
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999; // December 31, 2008
-            // TESTDUMMY ]
-                    // CSV [
+        // TESTDUMMY ]
+        // CSV [
         // Deployment of BIP68, BIP112, and BIP113.
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 0;
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 1486252800; // Feb 5th, 2017
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 1517788800; // Feb 5th, 2018
-            // CSV ]
-                    // DIP0001 [
+        // CSV ]
+        // DIP0001 [
         // Deployment of DIP0001
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0001].bit = 1;
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0001].nStartTime = 1508025600; // Oct 15th, 2017
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0001].nTimeout = 1539561600; // Oct 15th, 2018
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0001].nWindowSize = 4032;
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0001].nThreshold = 3226; // 80% of 4032
-            // DIP0001 ]
-                    // BIP147 [
+        // DIP0001 ]
+        // BIP147 [
         // Deployment of BIP147
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].bit = 2;
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nStartTime = 1524477600; // Apr 23th, 2018
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nTimeout = 1556013600; // Apr 23th, 2019
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nWindowSize = 4032;
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nThreshold = 3226; // 80% of 4032
-            // BIP147 ]
-                    // vDeployments ]
-                    // ? [
+        // BIP147 ]
+        // vDeployments ]
+        // ? [
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000081021b74f9f47bbd7bc"); // 888900
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x0000000000000026c29d576073ab51ebd1d3c938de02e9a44c7ee9e16f82db28"); // 888900
-            // ? ]
-                    // pchMessageStart [
+        // ? ]
+        // pchMessageStart [
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -248,12 +253,13 @@ public:
         /*!main_pch*/ pchMessageStart[1] = 0x35;
         /*!main_pch*/ pchMessageStart[2] = 0x22;
         /*!main_pch*/ pchMessageStart[3] = 0x05;
-            // pchMessageStart ]
-                    // ++ [
+
+        // pchMessageStart ]
+        // ++ [
         vAlertPubKey = ParseHex(/*!mainalert_pub_key1*/ "0413917fac85098c471217ccce9ba66d3d8cf2a664e789051aa8d83fe76483492987df8fa5376384628144f0bed9b9faba143b3037011f7a2d33269e3df7791d2c");
         nDefaultPort = /*!main_port*/ 5548;
         nPruneAfterHeight = 100000;
-            // ++ ]
+        // ++ ]
 
         // f6.2 genesis.nBits CreateGenesisBlock [
 
@@ -269,16 +275,16 @@ public:
         assert(consensus.hashGenesisBlock == uint256S(/*!main_hash_genesis*/ "0x000000934651dfcee062c39d32efea712b08a698624e28ffa53ab3a92a07747e"));
         assert(genesis.hashMerkleRoot == uint256S(/*!main_merkle*/ "0x8e352eea8e1f1ccd31bc5e6936b99b870277ee2d620a167f6cfd2d85b56c1455"));
 
-            // genesis  ]
-            // seeds [
+        // genesis  ]
+        // seeds [
 
         vSeeds.push_back(CDNSSeedData("TheGCCcoin.org", "dnsseed.TheGCCcoin.org"));
         vSeeds.push_back(CDNSSeedData("TheGCCcoindot.io", "dnsseed.TheGCCcoindot.io"));
         
         vSeeds.push_back(CDNSSeedData("thegcccoinpay.io", "dnsseed.thegcccoinpay.io"));
 
-            // seeds ]
-            // base58Prefixes [
+        // seeds ]
+        // base58Prefixes [
 
         // GCC addresses start with 'X'
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,76);
@@ -296,10 +302,10 @@ public:
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
 
-            // base58Prefixes ]
-            // +++ [
+        // base58Prefixes ]
+        // +++ [
 
-            fMiningRequiresPeers = true;
+        fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
         fMineBlocksOnDemand = false;
@@ -309,10 +315,16 @@ public:
         nPoolMaxTransactions = 3;
         nFulfilledRequestExpireTime = 60*60; // fulfilled requests expire in 1 hour
 
+        // b.6 todo: fix & test spork sporkaddr [
+
         strSporkAddress = "Xgtyuk76vhuFW2iT7UAiHgNdWXCf3J34wh";
 
-            // +++ ]
-            // checkpoints, tx [
+        // b.6 todo: fix & test spork sporkaddr ]
+
+        nLastPOWBlock = CUTOFF_POW_BLOCK;
+
+        // +++ ]
+        // checkpoints, tx [
 
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
@@ -326,7 +338,7 @@ public:
                         //   (the tx=... number in the SetBestChain debug.log lines)
             0.1         // * estimated number of transactions per second after that timestamp
         };
-            // checkpoints, tx ]
+        // checkpoints, tx ]
     }
 };
 static CMainParams mainParams;

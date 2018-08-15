@@ -101,6 +101,8 @@ public:
     int PoolMaxTransactions() const { return nPoolMaxTransactions; }
     int FulfilledRequestExpireTime() const { return nFulfilledRequestExpireTime; }
     const std::string& SporkAddress() const { return strSporkAddress; }
+    int LAST_POW_BLOCK() const { return nLastPOWBlock; }
+    uint256 HashGenesisBlock() const { return consensus.hashGenesisBlock; }
 protected:
     CChainParams() {}
 
@@ -128,6 +130,7 @@ protected:
     int nPoolMaxTransactions;
     int nFulfilledRequestExpireTime;
     std::string strSporkAddress;
+    int nLastPOWBlock;
 };
 
 // CChainParams ]

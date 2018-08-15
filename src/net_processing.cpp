@@ -1888,15 +1888,15 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             if (inv.type == MSG_BLOCK) {
                 UpdateBlockAvailability(pfrom->GetId(), inv.hash);
 
-                // p3.2 llog INV [
-
+                //x p3.2 llog INV [
+/*
                 std::wostringstream ss;
 
                 ss << "INV: nodeId=" << pfrom->GetId() << " hash=" << inv.hash.GetHex().c_str() << "\n";
-    
-                llogLog(L"Node/Net", ss.str());
 
-                // p3.2 llog INV ]
+                llogLog(L"Node/Net", ss.str());
+*/
+                //x p3.2 llog INV ]
 
                 if (fAlreadyHave || fImporting || fReindex || mapBlocksInFlight.count(inv.hash)) {
                     continue;

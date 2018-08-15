@@ -252,6 +252,14 @@ void llogLog(std::wstring path, std::wstring msg, const CBlockIndex &blockinfo)
         ss << " nBits 0x" << std::hex << blockinfo.nBits << std::dec << "\n";
         ss << " nNonce " << blockinfo.nNonce << "\n";
         ss << " nSequenceId " << blockinfo.nSequenceId << "\n";
+
+        ss << " nMint " << blockinfo.nMint << "\n";
+        ss << " nMoneySupply " << blockinfo.nMoneySupply << "\n";
+        ss << " nFlags " << blockinfo.nFlags << "\n";
+        ss << " nStakeModifier " << blockinfo.nStakeModifier << "\n";
+        ss << " prevoutStake " << blockinfo.prevoutStake.ToString().c_str() << "\n";
+        ss << " nStakeTime " << blockinfo.nStakeTime << "\n";
+        ss << " hashProofOfStake " << blockinfo.hashProofOfStake.ToString().c_str() << "\n";
     }
     else
         ss << "blockinfo=NULL";

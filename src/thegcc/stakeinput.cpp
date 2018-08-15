@@ -30,7 +30,6 @@ static const unsigned int MODIFIER_INTERVAL_TESTNET = 60;
 static const int MODIFIER_INTERVAL_RATIO = 3;
 
 unsigned int getIntervalVersion(bool fTestNet);
-static int64_t GetStakeModifierSelectionIntervalSection(int nSection);
 bool GetKernelStakeModifier(uint256 hashBlockFrom, uint64_t& nStakeModifier, int& nStakeModifierHeight, int64_t& nStakeModifierTime, bool fPrintProofOfStake);
 
 unsigned int getIntervalVersion(bool fTestNet)
@@ -43,7 +42,7 @@ unsigned int getIntervalVersion(bool fTestNet)
 
 
 // Get selection interval section (in seconds)
-static int64_t GetStakeModifierSelectionIntervalSection(int nSection)
+int64_t GetStakeModifierSelectionIntervalSection(int nSection)
 {
     assert(nSection >= 0 && nSection < 64);
     int64_t a = getIntervalVersion(fTestNet) * 63 / (63 + ((63 - nSection) * (MODIFIER_INTERVAL_RATIO - 1)));
@@ -51,7 +50,7 @@ static int64_t GetStakeModifierSelectionIntervalSection(int nSection)
 }
 
 // Get stake modifier selection interval (in seconds)
-static int64_t GetStakeModifierSelectionInterval()
+int64_t GetStakeModifierSelectionInterval()
 {
     int64_t nSelectionInterval = 0;
     for (int nSection = 0; nSection < 64; nSection++) {

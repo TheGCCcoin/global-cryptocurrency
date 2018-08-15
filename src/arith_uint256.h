@@ -247,6 +247,15 @@ public:
         assert(WIDTH >= 2);
         return pn[0] | (uint64_t)pn[1] << 32;
     }
+
+    // p.10 Get64 - pivx==thegcc-old [
+
+    uint64_t Get64(int n=0) const
+    {
+        return pn[2*n] | (uint64_t)pn[2*n+1] << 32;
+    }
+
+    // p.10 Get64 - pivx==thegcc-old ]
 };
 
 /** 256-bit unsigned big integer. */
