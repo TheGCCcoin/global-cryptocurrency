@@ -7,6 +7,7 @@
 #define BITCOIN_CHAIN_H
 
 #include "arith_uint256.h"
+//#include "primitives/transaction.h"
 #include "primitives/block.h"
 #include "pow.h"
 #include "tinyformat.h"
@@ -220,6 +221,11 @@ public:
         BLOCK_PROOF_OF_STAKE = (1 << 0), // is proof-of-stake block
         BLOCK_STAKE_ENTROPY  = (1 << 1), // entropy bit for stake modifier
         BLOCK_STAKE_MODIFIER = (1 << 2), // regenerated stake modifier
+        // pos extra flags [
+        BLOCK_STAKE_ENV      = (1 << 3), // environment stake location proof
+        BLOCK_STATE_BEGIN    = (1 << 4), // begin state block
+        BLOCK_STATE_END      = (1 << 5), // end state block
+        // pos extra flags ]
     };
 
     uint64_t nStakeModifier; // hash modifier for proof-of-stake
@@ -319,6 +325,12 @@ public:
         }
 
         // c.4.4 pos: vars by block header - disabled ]
+        // c.4.4.1 non complete block [
+
+        blockBegin();
+        blockUpdate(block);
+
+        // c.4.4.1 non complete block ]
     }
 
     // f.10 fix dash CBlockIndex(const CBlockHeader& block) -> pivx/thegcc-old CBlockIndex(const CBlock& block) ]
@@ -341,10 +353,67 @@ public:
             prevoutStake.SetNull();
             nStakeTime = 0;
         }
+
+        // c.4.4.2 alloc the location and dealloc uncompleted block [
+
+        blockUpdate(block);
+
+        // c.4.4.2 alloc the location and dealloc uncompleted block ]
+
         return true;
     }
 
     // f.11 pos updateBlock - for accept header - create index, accept block - update pos - todo: review ]
+    // f.11.1 begin [
+
+    void blockBegin() {
+        nFlags |= BLOCK_STATE_BEGIN;
+        // always dash header
+    }
+
+    // f.11.1 begin ]
+    // f.11.2 end [
+
+    void blockUpdate(const CBlock& block) {
+        // is vtx? [
+        if (checkTx(block)) {
+            nFlags |= BLOCK_STATE_END;
+//            nFlags &= ~BLOCK_STATE_BEGIN; // we're don't need the flag until serialization is done ! recheck !
+        }
+        // is vtx? ]
+    }
+
+    // f.11.2 end ]
+
+    bool isBlockStakePresent() {
+        return nFlags & BLOCK_STATE_END; // || nFlags |= BLOCK_STATE_END // disabled by old algo
+    }
+
+    // f.12.3 check tx - todo: optimize [
+
+    bool checkTx(const CBlock& block) {
+        size_t n = block.vtx.size();
+        return n > 0;
+
+/* // temporrary accepted by optimization - high risk
+        CTrasaction &vtx = **block.vtx;
+        bool res = false;
+        // for each transaction
+        for (int i = 0; i < vtx.size(); i++) {
+            // for each input
+//            for (int j = 0; j < )
+//if (vtx.size() > 1 && (vtx[0].in.size() > 0 || vtx.out.size() > 0)) { // old TheGCC
+//}
+// isStake
+//        return (vtx.size() > 1 && vtx[1]->IsCoinStake());
+        }
+#endif
+        return true;
+        */
+    }
+
+    // f.12.3 check tx ]
+
 
     CDiskBlockPos GetBlockPos() const {
         CDiskBlockPos ret;

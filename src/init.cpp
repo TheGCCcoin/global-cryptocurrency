@@ -1656,7 +1656,8 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                     break;
                 }
 
-                // l.2.1 dump mapBlockIndex [
+                //x l.2.1 dump mapBlockIndex [
+                /*
                 {
                     std::wostringstream ss;
                     ss << L"mapBlockIndex count=" << mapBlockIndex.size() << "\n";
@@ -1667,7 +1668,8 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 
                     llogLog(L"Init", ss.str());
                 }
-                // l.2.1 dump mapBlockIndex ]
+                 */
+                //x l.2.1 dump mapBlockIndex ]
 
                 // If the loaded chain has a wrong genesis, bail out immediately
                 // (we're likely using a testnet datadir, or the other way around).

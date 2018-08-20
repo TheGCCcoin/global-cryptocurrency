@@ -411,26 +411,31 @@ bool CBlockTreeDB::LoadBlockIndexGuts(boost::function<CBlockIndex*(const uint256
 
 //                llogLog(L"txdb/LoadBlockIndexGuts", L"index", *pindexNew);
 //                llogLog(L"txdb/LoadBlockIndexGuts/block", L"index", pindexNew->GetBlockHash().ToString());
-                if (count++ % 1000 == 0) {
+                if (count++ % 100000 == 0) {
                     llogLog(L"txdb/LoadBlockIndexGuts/count", L"count", count, true);
                 }
 
-                if (pindexNew->IsProofOfStake()) {
-                    // pos
-                }
-                else {
-                    // pow
-                    if (pindexNew->nHeight <= Params().LAST_POW_BLOCK()) {
-                        if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus())) {
-                            llogLog(L"txdb/LoadBlockIndexGuts/count", L"count", count, true);
-                            llogLog(L"txdb/LoadBlockIndexGuts/error", L"error pow index", *pindexNew);
-                            return error("LoadBlockIndex() : CheckProofOfWork failed: %s", pindexNew->ToString());
+                if (pindexNew->isBlockStakePresent()) {
+                    if (pindexNew->IsProofOfStake()) {
+                        // pos
+                    } else {
+                        // pow
+                        if (pindexNew->nHeight <= Params().LAST_POW_BLOCK()) {
+                            if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits,
+                                                  Params().GetConsensus())) {
+                                llogLog(L"txdb/LoadBlockIndexGuts/count", L"count", count, true);
+                                llogLog(L"txdb/LoadBlockIndexGuts/error", L"error pow index", *pindexNew);
+                                return error("LoadBlockIndex() : CheckProofOfWork failed: %s", pindexNew->ToString());
+                            }
                         }
                     }
-                }
-                // ppcoin: build setStakeSeen
+                    // ppcoin: build setStakeSeen
 //                if (pindexNew->IsProofOfStake())
 //                    setStakeSeen.insert(make_pair(pindexNew->prevoutStake, pindexNew->nStakeTime));
+                }
+                else {
+                    llogLog(L"txdb/LoadBlockIndexGuts/undef", L"undef ", *pindexNew);
+                }
 
                 // p.7 pos block index ]
 

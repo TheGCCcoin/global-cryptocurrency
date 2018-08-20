@@ -1246,20 +1246,30 @@ uint256 CBlockIndex::GetBlockTrust() const
 
 // p.7.2.4.2 pos GetBlockTrust ]
 // block ]
-// blockindex [
+// lock [
 
 CCriticalSection cs_BlockA;
+
+// lock ]
+// common <text>=int count [
+
 static std::map<const wchar_t *, int> _counts;
 
-static int _getCount(const wchar_t *name)
+static int _getCount(const wchar_t *name, bool pp=true)
 {
-    if (_counts[name] > 0)
-        _counts[name]++;
+    if (_counts[name] > 0) {
+        if (pp)
+            _counts[name]++;
+    }
     else
         _counts[name] = 1;
 
     return _counts[name];
 }
+
+// common <text>=int count ]
+// blockindex [
+// llog extra [
 
 void blockIndexSetDirty(CBlockIndex *index, const wchar_t *name)
 {
@@ -1299,16 +1309,41 @@ void blockIndexUnsetDirty(CBlockIndex *index, const wchar_t *name)
 
 void llog_blockIndexUpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams)
 {
-   if ((_getCount(L"UpdateTip") - 1) % 100 == 0) {
+    if ((_getCount(L"UpdateTip") - 1) % 1000 == 0) {
 //        std::wostringstream ss;
 //        ss << "insert " << index->GetBlockHash().ToString().c_str() << " " << setDirtyBlockIndex.size() << " " << name << "\n";
 //        std::wostringstream path;
 //        path << L"STATE/dirtyBlockIndex/" << name;
 //        llogLogReplace(path.str(), ss.str(), true);
-        llogLog(L"UpdateTip", L"pindex", *pindexNew);
+//        llogLog(L"UpdateTip", L"pindex", *pindexNew);
+        llogLog(L"UpdateTip", L"count", _getCount(L"UpdateTip", false), true);
     }
+}
+
+// llog extra ]
+// blockindex ]
+// LiveLogging tool [
+// section 0: block index unexpected work flag [
+// short theory: this is unexpected work flag for dash block index for prevent unusual locations [
+// v0.1 - experimental [
+// blockIndexSetFlagNone [
+
+void blockIndexSetFlagNone(int index)
+{
 
 }
 
-// blockindex ]
+// blockIndexSetFlagNone ]
+// blockIndexSetFlagExpected [
+
+void blockIndexSetFlagExpected(int index)
+{
+
+}
+
+// blockIndexSetFlagExpected ]
+// v0.1 - experimental ]
+// short theory: this is unexpected work flag for dash block index for prevent unusual locations ]
+// section 0: block index unexpected work flag ]
+// LiveLogging tool ]
 // dash ]
