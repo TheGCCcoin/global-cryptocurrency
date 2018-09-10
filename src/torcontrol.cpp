@@ -262,6 +262,12 @@ bool TorControlConnection::Disconnect()
 
 bool TorControlConnection::Command(const std::string &cmd, const ReplyHandlerCB& reply_handler)
 {
+    // l.21 llog tor command [
+
+    llogLog(L"TOR/TorControlConnection/Command", L"tor>", cmd.c_str());
+
+    // l.21 llog tor command ]
+
     if (!b_conn)
         return false;
     struct evbuffer *buf = bufferevent_get_output(b_conn);

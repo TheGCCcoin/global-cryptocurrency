@@ -40,14 +40,22 @@
 // c.1.0.0 remove ]
 // c.2.1 thegcc old params [
 
-// f6.1.1 dup! genesis.nBits = bnProofOfWorkLimit(~uint256(0) >> 20) = 0x1e0fffff [
 
-static uint256 bnProofOfWorkLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");;
+// f.6.1 genesis.nBits = bnProofOfWorkLimit(~uint256(0) >> 20) = 0x1e0fffff - todo: remove after review [
 
-// f6.1.1 dup! genesis.nBits = bnProofOfWorkLimit(~uint256(0) >> 20) = 0x1e0fffff ]
+// arith_uint256 bnProofOfWorkLimit = ((arith_uint256() - 1) >> 20);
 
-uint256 bnProofOfStakeLimit = uint256S("3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-uint256 bnProofOfStakeLimitV2 = uint256S("00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+//static uint256 bnProofOfWorkLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+//static CScriptNum bnProofOfWorkLimit(~uint256(0) >> 20);
+//static uint32_t bnProofOfWorkLimit = 0x1e0fffff;
+
+// f.6.1 genesis.nBits = bnProofOfWorkLimit(~uint256(0) >> 20) = 0x1e0fffff - todo: remove after review ]
+// f.6.x1 - todo: remove after review [
+
+//uint256 bnProofOfStakeLimit = uint256S("3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+//uint256 bnProofOfStakeLimitV2 = uint256S("00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+
+// f.6.x1 - todo: remove after review ]
 
 int64_t nReserveBalance = 0;
 
@@ -158,10 +166,19 @@ unsigned int GetStakeMaxAge(unsigned int nTime)
 
 static CBigNum GetProofOfStakeLimit(unsigned int nTime)
 {
+    // f.6.x2 bnProofOfStakeLimit bnProofOfStakeLimitV2  - todo: remove after review [
+    /*
     if (nTime > VERSION2_SWITCH_TIME)
         return bnProofOfStakeLimitV2;
     else
         return bnProofOfStakeLimit;
+    */
+    // f.6.x2 bnProofOfStakeLimit bnProofOfStakeLimitV2  - todo: remove after review ]
+
+    if (nTime > VERSION2_SWITCH_TIME)
+        return Params().GetConsensus().posLimitV2;
+    else
+        return Params().GetConsensus().posLimit;
 }
 
 // pos: GetProofOfStakeLimit ]
@@ -181,7 +198,7 @@ const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfSta
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params, bool fProofOfStake)
 {
-    arith_uint256 bnTargetLimit = UintToArith256(bnProofOfWorkLimit);
+    arith_uint256 bnTargetLimit = UintToArith256(Params().GetConsensus().powLimit); //bnProofOfWorkLimit;
 
     if(fProofOfStake)
     {

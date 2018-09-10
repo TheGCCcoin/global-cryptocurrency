@@ -116,7 +116,13 @@ int CMerkleTx::GetBlocksToMaturity() const
     */
     if (!(IsCoinBase() || IsCoinStake()))
         return 0;
-    return std::max(0, (COINBASE_MATURITY+20) - GetDepthInMainChain()+1);
+
+    // y.1 !!! fix COINBASE_MATURITY for test !!! [
+
+//    return std::max(0, (COINBASE_MATURITY+20) - GetDepthInMainChain()+1);
+    return std::max(0, 2 - GetDepthInMainChain()+1);
+
+    // y.1 !!! fix COINBASE_MATURITY for test !!! ]
 }
 
 // p.5.1 thegcc-old GetBlocksToMaturity - yes ]

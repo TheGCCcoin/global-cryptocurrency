@@ -94,6 +94,13 @@ struct Params {
     int64_t nPowTargetTimespan;
     int nPowKGWHeight;
     int nPowDGWHeight;
+
+    // p.12.1 pos params [
+    /** Proof of stake parameters */
+    uint256 posLimit;
+    uint256 posLimitV2;
+    // p.12.1 pos params ]
+
     int64_t DifficultyAdjustmentInterval() const { return nPowTargetTimespan / nPowTargetSpacing; }
     uint256 nMinimumChainWork;
     uint256 defaultAssumeValid;

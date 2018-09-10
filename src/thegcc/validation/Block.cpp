@@ -259,8 +259,10 @@ bool CheckBlock(const CBlock& block, CValidationState& state, const Consensus::P
     // thegcc: check coinbase timestamp [
 
     // Check coinbase timestamp
-    if (block.GetBlockTime() > FutureDrift(block.vtx[0]->nTime))
+    if (block.GetBlockTime() > FutureDrift(block.vtx[0]->nTime)) {
+        LogPrintf("CheckBlock(): fail block.GetBlockTime()=%i > FutureDrift(block.vtx[0]->nTime)=%i; block.vtx[0]->nTime=%i\n", block.GetBlockTime(), FutureDrift(block.vtx[0]->nTime), block.vtx[0]->nTime);
         return state.DoS(50, error("CheckBlock() : coinbase timestamp is too early"));
+    }
 
     // thegcc: check coinbase timestamp ]
     // thegcc: pos [

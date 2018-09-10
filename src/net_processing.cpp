@@ -272,6 +272,40 @@ void UpdatePreferredDownload(CNode* node, CNodeState* state)
     nPreferredDownload += state->fPreferredDownload;
 }
     // CNodeState ]
+    // u.1.2 send: old proto version verification_token [
+    // PushNodeVersionTheGCCOld [
+
+    void PushNodeVersionTheGCCOld(CNode *pnode, CConnman& connman, int64_t nTime)
+    {
+        ServiceFlags nLocalNodeServices = pnode->GetLocalServices();
+        uint64_t nonce = pnode->GetLocalNonce();
+        int nNodeStartingHeight = pnode->GetMyStartingHeight();
+        NodeId nodeid = pnode->GetId();
+        CAddress addr = pnode->addr;
+
+        uint64_t verification_token = 0;
+
+        CAddress addrYou = (addr.IsRoutable() && !IsProxy(addr) ? addr : CAddress(CService(), addr.nServices));
+
+        // u.1.6 tor addrMe fix [
+
+//        CAddress addrMe = CAddress(CService(), nLocalNodeServices);
+        CAddress addrMe = GetLocalAddress(&addr, pnode->GetLocalServices());
+
+        // u.1.6 tor addrMe fix ]
+
+        connman.PushMessage(pnode, CNetMsgMaker(INIT_PROTO_VERSION).Make(NetMsgType::VERSION, PROTOCOL_VERSION, (uint64_t)nLocalNodeServices, nTime, addrYou, addrMe,
+                                                                         verification_token, nonce, strSubVersion, nNodeStartingHeight, ::fRelayTxes));
+
+        if (fLogIPs)
+            LogPrint("net", "send version message: version %d, blocks=%d, us=%s, them=%s, peer=%d\n", PROTOCOL_VERSION, nNodeStartingHeight, addrMe.ToString(), addrYou.ToString(), nodeid);
+        else
+            LogPrint("net", "send version message: version %d, blocks=%d, us=%s, peer=%d\n", PROTOCOL_VERSION, nNodeStartingHeight, addrMe.ToString(), nodeid);
+    }
+
+    // PushNodeVersionTheGCCOld ]
+    // u.1.2 send: old proto version verification_token ]
+    // u.1.3 send: new proto version no verification_token [
     // PushNodeVersion [
 
 void PushNodeVersion(CNode *pnode, CConnman& connman, int64_t nTime)
@@ -285,6 +319,8 @@ void PushNodeVersion(CNode *pnode, CConnman& connman, int64_t nTime)
     CAddress addrYou = (addr.IsRoutable() && !IsProxy(addr) ? addr : CAddress(CService(), addr.nServices));
     CAddress addrMe = CAddress(CService(), nLocalNodeServices);
 
+//    int nRecvVersion = pnode->nRecvVersion;
+
     connman.PushMessage(pnode, CNetMsgMaker(INIT_PROTO_VERSION).Make(NetMsgType::VERSION, PROTOCOL_VERSION, (uint64_t)nLocalNodeServices, nTime, addrYou, addrMe,
             nonce, strSubVersion, nNodeStartingHeight, ::fRelayTxes));
 
@@ -295,6 +331,7 @@ void PushNodeVersion(CNode *pnode, CConnman& connman, int64_t nTime)
 }
 
     // PushNodeVersion ]
+    // u.1.3 send: new proto version no verification_token ]
     // InitializeNode [
 
 void InitializeNode(CNode *pnode, CConnman& connman) {
@@ -305,8 +342,14 @@ void InitializeNode(CNode *pnode, CConnman& connman) {
         LOCK(cs_main);
         mapNodeState.emplace_hint(mapNodeState.end(), std::piecewise_construct, std::forward_as_tuple(nodeid), std::forward_as_tuple(addr, std::move(addrName)));
     }
+
+    // -> PushNodeVersion [
+
     if(!pnode->fInbound)
-        PushNodeVersion(pnode, connman, GetTime());
+        PushNodeVersionTheGCCOld(pnode, connman, GetTime());
+//        PushNodeVersion(pnode, connman, GetTime());
+
+    // -> PushNodeVersion ]
 }
 
     // InitializeNode ]
@@ -1511,6 +1554,8 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
     else if (strCommand == NetMsgType::VERSION)
     {
+        // x.1 disable duplicate version message [
+
         // Each connection can only send one version message
         if (pfrom->nVersion != 0)
         {
@@ -1519,6 +1564,8 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             Misbehaving(pfrom->GetId(), 1);
             return false;
         }
+
+        // x.1 disable duplicate version message ]
 
         int64_t nTime;
         CAddress addrMe;
@@ -1561,8 +1608,49 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
         if (nVersion == 10300)
             nVersion = 300;
+
+        // l.20 llog version message [
+
+        if (nVersion > 70000)
+            nVersion = nVersion; // breakpoint
+
+        std::wostringstream ss;
+
+        ss << "\n";
+        ss << " nVersion " << nVersion << "\n";
+        ss << " addr " << pfrom->addr.ToString().c_str() << "\n";
+        ss << " nServiceInt " << nServiceInt << "\n";
+        ss << " nTime" << nTime << " 0x" << std::hex << nTime << std::dec << "\n";
+        ss << " addrMe" << addrMe.ToString().c_str() << "\n";
+
+
+        llogLog(L"ProcessMessage/handshake", ss.str().c_str());
+        llogLog(L"ProcessMessage/handshake", L"recv", vRecv.data0().data(), (int)vRecv.data0().size(), 0);
+
+        // l.20 llog version message ]
+        // u.1.1 recv: old proto version verification_token [
+
+        uint64_t verification_token = 0;
+
         if (!vRecv.empty())
-            vRecv >> addrFrom >> nNonce;
+            vRecv >> addrFrom >> verification_token >> nNonce;
+//        if (!vRecv.empty())
+//            vRecv >> addrFrom >> nNonce;
+
+        // u.1.1 recv: old proto version verification_token ]
+
+        // l.20.1 llog more [
+
+        ss.str(L"\n");
+
+        ss << " addrFrom " << addrFrom.ToString().c_str() << "\n";
+        ss << " verification_token 0x" << std::hex << verification_token << std::dec << "\n";
+        ss << " nNonce " << std::hex << nNonce << std::dec << "\n";
+
+        llogLog(L"ProcessMessage/handshake", ss.str().c_str());
+
+        // l.20.1 llog more ]
+
         if (!vRecv.empty()) {
             vRecv >> LIMITED_STRING(strSubVer, MAX_SUBVERSION_LENGTH);
             cleanSubVer = SanitizeString(strSubVer);
@@ -1572,6 +1660,11 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         }
         if (!vRecv.empty())
             vRecv >> fRelay;
+/*
+        if (nVersion < 70000) {
+            PushNodeVersionTheGCCOld(pfrom, connman, GetTime());
+        }
+*/
         // Disconnect if we connected to ourself
         if (pfrom->fInbound && !connman.CheckIncomingNonce(nNonce))
         {
@@ -1587,7 +1680,8 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
         // Be shy and don't send version until we hear
         if (pfrom->fInbound)
-            PushNodeVersion(pfrom, connman, GetAdjustedTime());
+            PushNodeVersionTheGCCOld(pfrom, connman, GetAdjustedTime());
+//            PushNodeVersion(pfrom, connman, GetAdjustedTime());
 
         if (Params().NetworkIDString() == CBaseChainParams::DEVNET) {
             if (strSubVer.find(strprintf("devnet=%s", GetDevNetName())) == std::string::npos) {

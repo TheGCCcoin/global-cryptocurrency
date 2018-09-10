@@ -24,19 +24,38 @@
 #include "livelog/llog-dump.h"
 
 // @ ]
-// *::CreateGenesisBlock [
+// vars [
 
-// f.6.1 genesis.nBits = bnProofOfWorkLimit(~uint256(0) >> 20) = 0x1e0fffff [
+//extern arith_uint256 bnProofOfWorkLimit;
 
-//static CScriptNum bnProofOfWorkLimit(~uint256(0) >> 20);
-static uint32_t bnProofOfWorkLimit = 0x1e0fffff;
-
-// f.6.1 genesis.nBits = bnProofOfWorkLimit(~uint256(0) >> 20) = 0x1e0fffff ]
 // f.9 thegcc-old CUTOFF_POW_BLOCK -> Params.LAST_POW_BLOCK [
 
 extern unsigned int CUTOFF_POW_BLOCK;
 
 // f.9 thegcc-old CUTOFF_POW_BLOCK -> Params.LAST_POW_BLOCK ]
+
+// vars ]
+// *::CreateGenesisBlock [
+
+// f.6.1.1 tetnet genesis.nBits [
+
+//arith_uint256 bnProofOfWorkLimitTestNet((arith_uint256() - 1) >> 16);
+//arith_uint256 bnProofOfStakeLimitTestNet((arith_uint256() - 1) >> 30);
+
+//uint256 bnProofOfWorkLimitTestNet = ArithToUint256((arith_uint256() - 1) >> 16);
+/*
+bnProofOfStakeLimit = bnProofOfStakeLimitTestNet; // 0x00000fff PoS base target is fixed in testnet
+bnProofOfWorkLimit = bnProofOfWorkLimitTestNet; // 0x0000ffff PoW base target is fixed in testnet
+nStakeMinAge = 15 * 60; // test net min age is 20 min
+nStakeMaxAge = 60 * 60; // test net min age is 60 min
+nModifierInterval = 60; // test modifier interval is 2 minutes
+nCoinbaseMaturity = 10; // test maturity is 10 blocks
+nStakeTargetSpacing = 3 * 60; // test block spacing is 3 minutes
+*/
+//static CBigNum bnProofOfWorkLimitTestNet(~uint256(0) >> 16);
+//static CBigNum bnProofOfStakeLimitTestNet(~uint256(0) >> 30);
+
+// f.6.1.1 tetnet genesis.nBits ]
 
 static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesisOutputScript, uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
@@ -193,7 +212,9 @@ public:
         consensus.DIP0001Height = 782208;
         // bip34, bip65, bip66, dip0001 ]
         // pow [
+            // p.12.2 pow bnProofOfWorkLimit - todo: cleanup [
         consensus.powLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20
+            // p.12.2 pow bnProofOfWorkLimit - todo: cleanup ]
         consensus.nPowTargetTimespan = 24 * 60 * 60; // GCC: 1 day
         consensus.nPowTargetSpacing = 2.5 * 60; // GCC: 2.5 minutes
         consensus.fPowAllowMinDifficultyBlocks = false;
@@ -201,6 +222,14 @@ public:
         consensus.nPowKGWHeight = 15200;
         consensus.nPowDGWHeight = 34140;
         // pow ]
+        // pos [
+            // p.12.3 pos bnProofOfStakeLimit bnProofOfStakeLimitV2 - todo: cleanup [
+            // bnProofOfStakeLimit
+        consensus.posLimit = uint256S("3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+            // bnProofOfStakeLimitV2
+        consensus.posLimitV2 = uint256S("00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+            // p.12.3 pos bnProofOfStakeLimit bnProofOfStakeLimitV2 - todo: cleanup ]
+        // pos ]
         // + [
         consensus.nRuleChangeActivationThreshold = 1916; // 95% of 2016
         consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
@@ -260,22 +289,18 @@ public:
         nDefaultPort = /*!main_port*/ 5548;
         nPruneAfterHeight = 100000;
         // ++ ]
-
-        // f6.2 genesis.nBits CreateGenesisBlock [
+        // genesis main [
 
         //genesis = /*!main_genesis1*/ CreateGenesisBlock(1488585034, 141844, 0x1e0ffff0, 1, 50 * COIN);
-        genesis = /*!main_genesis1*/ CreateGenesisBlock(1488585034, 141844, bnProofOfWorkLimit, 1, 50 * COIN);
+        genesis = /*!main_genesis1*/ CreateGenesisBlock(1488585034, 141844, UintToArith256(consensus.powLimit).GetCompact(), 1, 50 * COIN);
 
         llogLog(L"CreateGenesisBlock/main", L"genesis", genesis);
-
-
-        // f6.2 genesis.nBits CreateGenesisBlock ]
 
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S(/*!main_hash_genesis*/ "0x000000934651dfcee062c39d32efea712b08a698624e28ffa53ab3a92a07747e"));
         assert(genesis.hashMerkleRoot == uint256S(/*!main_merkle*/ "0x8e352eea8e1f1ccd31bc5e6936b99b870277ee2d620a167f6cfd2d85b56c1455"));
 
-        // genesis  ]
+        // genesis main ]
         // seeds [
 
         vSeeds.push_back(CDNSSeedData("TheGCCcoin.org", "dnsseed.TheGCCcoin.org"));
@@ -373,13 +398,26 @@ public:
         consensus.BIP65Height = 2431; // 0000039cf01242c7f921dcb4806a5994bc003b48c1973ae0c89b67809c2bb2ab
         consensus.BIP66Height = 2075; // 0000002acdd29a14583540cb72e1c5cc83783560e38fa7081495d474fe1671f7
         consensus.DIP0001Height = 5500;
-        consensus.powLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20
+            // pow [
+            // p.12.4 bnProofOfWorkLimitTestNet - todo: cleanup [
+//       consensus.powLimit = ArithToUint256((arith_uint256() - 1) >> 16); testnet
+        consensus.powLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // main // ~uint256(0) >> 20
+//            consensus.powLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20
+            // p.12.4 bnProofOfWorkLimitTestNet - todo: cleanup ]
         consensus.nPowTargetTimespan = 24 * 60 * 60; // GCC: 1 day
         consensus.nPowTargetSpacing = 2.5 * 60; // GCC: 2.5 minutes
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = false;
         consensus.nPowKGWHeight = 4001; // nPowKGWHeight >= nPowDGWHeight means "no KGW"
         consensus.nPowDGWHeight = 4001;
+            // pow ]
+            // pos [
+            // p.12.5 pos bnProofOfStakeLimitTestNet - todo: cleanup [
+            // bnProofOfStakeLimitTestNet
+            consensus.posLimit = ArithToUint256((arith_uint256() - 1) >> 30);
+            consensus.posLimitV2 = ArithToUint256((arith_uint256() - 1) >> 30);
+            // p.12.5 pos bnProofOfStakeLimitTestNet - todo: cleanup ]
+            // pos ]
         consensus.nRuleChangeActivationThreshold = 1512; // 75% for testchains
         consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -415,19 +453,38 @@ public:
         /*!test_pch*/ pchMessageStart[1] = 0x35;
         /*!test_pch*/ pchMessageStart[2] = 0x22;
         /*!test_pch*/ pchMessageStart[3] = 0x05;
-        vAlertPubKey = ParseHex("04517d8a699cb43d3938d7b24faaff7cda448ca4ea267723ba614784de661949bf632d6304316b244646dea079735b9a6fc4af804efb4752075b9fe2245e14e412");
-        nDefaultPort = /*!test_port*/ 25501;
+
+            vAlertPubKey = ParseHex("04517d8a699cb43d3938d7b24faaff7cda448ca4ea267723ba614784de661949bf632d6304316b244646dea079735b9a6fc4af804efb4752075b9fe2245e14e412");
+
+        nDefaultPort = /*!test_port*/ 5548;
         nPruneAfterHeight = 1000;
 
-        genesis = /*!test_genesis1*/ CreateGenesisBlock(1531114943, 220084, 0x1e0ffff0, 1, 50 * COIN);
+            // genesis testnet [
+#if 0
+        genesis = /*!test_genesis1*/ CreateGenesisBlock(1488585034, 141844, UintToArith256(consensus.powLimit).GetCompact(), 1, 50 * COIN);
 
         llogLog(L"CreateGenesisBlock/test", L"genesis", genesis);
 
         consensus.hashGenesisBlock = genesis.GetHash();
-//        assert(consensus.hashGenesisBlock == uint256S(/*!test_hash_genesis*/ "0xff6964444e41f1b310af51b7d044f0366023385127141f23b0854ec4db68a57f"));
-//        assert(genesis.hashMerkleRoot == uint256S(/*!main_merkle*/ "0x8e352eea8e1f1ccd31bc5e6936b99b870277ee2d620a167f6cfd2d85b56c1455"));
+        assert(consensus.hashGenesisBlock == uint256S(/*!test_hash_genesis*/ "0xff6964444e41f1b310af51b7d044f0366023385127141f23b0854ec4db68a57f"));
+        assert(genesis.hashMerkleRoot == uint256S(/*!main_merkle*/ "0x8e352eea8e1f1ccd31bc5e6936b99b870277ee2d620a167f6cfd2d85b56c1455"));
+#endif
+            // genesis testnet ]
+        // genesis main for testnet [
 
-        vFixedSeeds.clear();
+        //genesis = /*!main_genesis1*/ CreateGenesisBlock(1488585034, 141844, 0x1e0ffff0, 1, 50 * COIN);
+        genesis = /*!main_genesis1*/ CreateGenesisBlock(1488585034, 141844, UintToArith256(consensus.powLimit).GetCompact(), 1, 50 * COIN);
+
+        llogLog(L"CreateGenesisBlock/test", L"genesis", genesis);
+
+        consensus.hashGenesisBlock = genesis.GetHash();
+        assert(consensus.hashGenesisBlock == uint256S(/*!main_hash_genesis*/ "0x000000934651dfcee062c39d32efea712b08a698624e28ffa53ab3a92a07747e"));
+        assert(genesis.hashMerkleRoot == uint256S(/*!main_merkle*/ "0x8e352eea8e1f1ccd31bc5e6936b99b870277ee2d620a167f6cfd2d85b56c1455"));
+
+        // genesis main for testnet ]
+
+
+            vFixedSeeds.clear();
         vSeeds.clear();
         // nodes with support for servicebits filtering should be at the top
         vSeeds.push_back(CDNSSeedData("TheGCCcoindot.io",  "testnet-seed.TheGCCcoindot.io"));
@@ -459,13 +516,37 @@ public:
         nPoolMaxTransactions = 3;
         nFulfilledRequestExpireTime = 5*60; // fulfilled requests expire in 5 minutes
 
+            // d.6 spork address testnet - review ! [
+
         strSporkAddress = "yjPtiKh2uwk3bDutTEA2q9mCtXyiZRWn55";
 
+            // d.6 spork address testnet - review ! ]
+            // d.7 testnet checkpoints - review ! [
+
+            // checkpoints, tx [
+
+            checkpointData = (CCheckpointData) {
+                    boost::assign::map_list_of
+                            (      0, uint256S(/*!main_hash_genesis*/ "0x000000934651dfcee062c39d32efea712b08a698624e28ffa53ab3a92a07747e"))
+                            ( 206221, uint256S("0x3264decb0ba480370a378f2e017a1efbfd7027988fcb21a834b74bb1fb694a7b") )
+            };
+
+            chainTxData = ChainTxData{
+                    1529305236, // * UNIX timestamp of last known number of transactions
+                    6155435,    // * total number of transactions between genesis and that timestamp
+                    //   (the tx=... number in the SetBestChain debug.log lines)
+                    0.1         // * estimated number of transactions per second after that timestamp
+            };
+            // checkpoints, tx ]
+
+            // d.7 testnet checkpoints - review ! ]
+
+/*
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
-            
-            
-            
+
+
+
             ( 100000, uint256S("0x0000000003aa53e24b6e60ef97642e4193611f2bcb75ea1fa8105f0b5ffd5242"))
             ( 143200, uint256S("0x0000000004a7878409189b7a8f75b3815d9b8c45ee8f79955a6c727d83bddb04"))
         };
@@ -476,7 +557,7 @@ public:
                         //   (the tx=... number in the SetBestChain debug.log lines)
             0.01        // * estimated number of transactions per second after that timestamp
         };
-
+*/
     }
 };
 static CTestNetParams testNetParams;
@@ -510,6 +591,7 @@ public:
         consensus.BIP65Height = 1; // BIP65 activated immediately on devnet
         consensus.BIP66Height = 1; // BIP66 activated immediately on devnet
         consensus.DIP0001Height = 2; // DIP0001 activated immediately on devnet
+            // pow [
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 1
         consensus.nPowTargetTimespan = 24 * 60 * 60; // GCC: 1 day
         consensus.nPowTargetSpacing = 2.5 * 60; // GCC: 2.5 minutes
@@ -517,6 +599,11 @@ public:
         consensus.fPowNoRetargeting = false;
         consensus.nPowKGWHeight = 4001; // nPowKGWHeight >= nPowDGWHeight means "no KGW"
         consensus.nPowDGWHeight = 4001;
+            // pow ]
+            // pos [
+        consensus.posLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 1
+        consensus.posLimitV2 = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 1
+            // pos ]
         consensus.nRuleChangeActivationThreshold = 1512; // 75% for testchains
         consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;

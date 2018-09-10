@@ -17,6 +17,8 @@
 #include "ui_interface.h"
 #include "util.h"
 
+#include "livelog/llog-dump.h"
+
 // @ ]
 // CMasternodeSync [
 // vars [
@@ -43,6 +45,8 @@ void CMasternodeSync::Reset()
     nTimeAssetSyncStarted = GetTime();
     nTimeLastBumped = GetTime();
     nTimeLastFailure = 0;
+
+    llogLog(L"Masternode/log", L"CMasternodeSync reset\n");
 }
 
 // Reset ]

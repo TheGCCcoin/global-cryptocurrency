@@ -21,6 +21,8 @@
 #include "util.h"
 #include "warnings.h"
 
+#include "livelog/llog-dump.h"
+
 /** Masternode manager */
 CMasternodeMan mnodeman;
 
@@ -72,7 +74,9 @@ CMasternodeMan::CMasternodeMan():
     mapSeenMasternodeBroadcast(),
     mapSeenMasternodePing(),
     nDsqCount(0)
-{}
+{
+    llogLog(L"Masternode/log", L"create CMasternodeMan\n");
+}
 
 bool CMasternodeMan::Add(CMasternode &mn)
 {

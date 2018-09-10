@@ -308,7 +308,7 @@ void llogLog(std::wstring path, std::wstring msg, const void *p, int size, int f
                 ss << " " << buf << "\n";
             }
         }
-        if ((i + 1) % 16 != 0) {
+        if (i == 0 || i % 16 != 0) {
             buf[j] = 0;
             ss << " " << buf << "\n";
         }

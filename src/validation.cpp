@@ -1357,7 +1357,13 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos, const Consensus:
         return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
     }
 
-    // f.12 pos disable CheckProofOfWork [
+    // l.19 log block [
+
+    llogLog(L"validation.cpp/ReadBlockFromDisk", L"block", block);
+
+    // l.19 log block ]
+
+    //x f.12 pos disable CheckProofOfWork [
 
     // Check the header
     if (block.IsProofOfWork()) {
@@ -1365,7 +1371,7 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos, const Consensus:
             return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
     }
 
-    // f.12 pos disable CheckProofOfWork ]
+    //x f.12 pos disable CheckProofOfWork ]
 
     return true;
 }

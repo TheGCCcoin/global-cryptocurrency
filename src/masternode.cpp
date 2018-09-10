@@ -2,6 +2,8 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+// @ [
+
 #include "activemasternode.h"
 #include "base58.h"
 #include "clientversion.h"
@@ -20,6 +22,11 @@
 
 #include <boost/lexical_cast.hpp>
 
+// @ ]
+
+// class CMasternode [
+
+// CMasternode constructor [
 
 CMasternode::CMasternode() :
     masternode_info_t{ MASTERNODE_ENABLED, PROTOCOL_VERSION, GetAdjustedTime()},
@@ -51,6 +58,9 @@ CMasternode::CMasternode(const CMasternodeBroadcast& mnb) :
     vchSig(mnb.vchSig),
     fAllowMixingTx(true)
 {}
+
+// CMasternode constructor ]
+// UpdateFromNewBroadcast [
 
 //
 // When a new masternode broadcast is sent, update our information
@@ -88,6 +98,9 @@ bool CMasternode::UpdateFromNewBroadcast(CMasternodeBroadcast& mnb, CConnman& co
     return true;
 }
 
+// UpdateFromNewBroadcast ]
+// CalculateScore [
+
 //
 // Deterministically calculate a given "score" for a Masternode depending on how close it's hash is to
 // the proof of work for that block. The further away they are the better, the furthest will win the election
@@ -100,6 +113,9 @@ arith_uint256 CMasternode::CalculateScore(const uint256& blockHash) const
     ss << outpoint << nCollateralMinConfBlockHash << blockHash;
     return UintToArith256(ss.GetHash());
 }
+
+// CalculateScore ]
+// CheckCollateral [
 
 CMasternode::CollateralStatus CMasternode::CheckCollateral(const COutPoint& outpoint, const CPubKey& pubkey)
 {
@@ -127,6 +143,9 @@ CMasternode::CollateralStatus CMasternode::CheckCollateral(const COutPoint& outp
     nHeightRet = coin.nHeight;
     return COLLATERAL_OK;
 }
+
+// CheckCollateral ]
+// Check [
 
 void CMasternode::Check(bool fForce)
 {
@@ -266,6 +285,9 @@ void CMasternode::Check(bool fForce)
     }
 }
 
+// Check ]
+// IsValidNetAddr [
+
 bool CMasternode::IsValidNetAddr()
 {
     return IsValidNetAddr(addr);
@@ -279,6 +301,9 @@ bool CMasternode::IsValidNetAddr(CService addrIn)
             (addrIn.IsIPv4() && IsReachable(addrIn) && addrIn.IsRoutable());
 }
 
+// IsValidNetAddr ]
+// GetInfo [
+
 masternode_info_t CMasternode::GetInfo() const
 {
     masternode_info_t info{*this};
@@ -286,6 +311,9 @@ masternode_info_t CMasternode::GetInfo() const
     info.fInfoValid = true;
     return info;
 }
+
+// GetInfo ]
+// StateToString GetStateString GetStatus [
 
 std::string CMasternode::StateToString(int nStateIn)
 {
@@ -312,6 +340,9 @@ std::string CMasternode::GetStatus() const
     // TODO: return smth a bit more human readable here
     return GetStateString();
 }
+
+// StateToString GetStateString GetStatus ]
+// UpdateLastPaid [
 
 void CMasternode::UpdateLastPaid(const CBlockIndex *pindex, int nMaxBlocksToScanBack)
 {
@@ -351,6 +382,14 @@ void CMasternode::UpdateLastPaid(const CBlockIndex *pindex, int nMaxBlocksToScan
     // or it was found in mnpayments blocks but wasn't found in the blockchain.
     // LogPrint("mnpayments", "CMasternode::UpdateLastPaidBlock -- searching for block with payment to %s -- keeping old %d\n", outpoint.ToStringShort(), nBlockLastPaid);
 }
+
+// UpdateLastPaid ]
+
+// class CMasternode ]
+
+// class CMasternodeBroadcast [
+
+// Create [
 
 #ifdef ENABLE_WALLET
 bool CMasternodeBroadcast::Create(const std::string& strService, const std::string& strKeyMasternode, const std::string& strTxHash, const std::string& strOutputIndex, std::string& strErrorRet, CMasternodeBroadcast &mnbRet, bool fOffline)
@@ -425,6 +464,9 @@ bool CMasternodeBroadcast::Create(const COutPoint& outpoint, const CService& ser
 }
 #endif // ENABLE_WALLET
 
+// Create ]
+// SimpleCheck [
+
 bool CMasternodeBroadcast::SimpleCheck(int& nDos)
 {
     nDos = 0;
@@ -482,6 +524,9 @@ bool CMasternodeBroadcast::SimpleCheck(int& nDos)
     return true;
 }
 
+// SimpleCheck ]
+// Update [
+
 bool CMasternodeBroadcast::Update(CMasternode* pmn, int& nDos, CConnman& connman)
 {
     nDos = 0;
@@ -535,6 +580,9 @@ bool CMasternodeBroadcast::Update(CMasternode* pmn, int& nDos, CConnman& connman
 
     return true;
 }
+
+// Update ]
+// CheckOutpoint [
 
 bool CMasternodeBroadcast::CheckOutpoint(int& nDos)
 {
@@ -597,6 +645,9 @@ bool CMasternodeBroadcast::CheckOutpoint(int& nDos)
     return true;
 }
 
+// CheckOutpoint ]
+// GetHash [
+
 uint256 CMasternodeBroadcast::GetHash() const
 {
     // Note: doesn't match serialization
@@ -607,6 +658,9 @@ uint256 CMasternodeBroadcast::GetHash() const
     ss << sigTime;
     return ss.GetHash();
 }
+
+// GetHash ]
+// GetSignatureHash [
 
 uint256 CMasternodeBroadcast::GetSignatureHash() const
 {
@@ -620,6 +674,9 @@ uint256 CMasternodeBroadcast::GetSignatureHash() const
     ss << nProtocolVersion;
     return ss.GetHash();
 }
+
+// GetSignatureHash ]
+// Sign [
 
 bool CMasternodeBroadcast::Sign(const CKey& keyCollateralAddress)
 {
@@ -658,6 +715,9 @@ bool CMasternodeBroadcast::Sign(const CKey& keyCollateralAddress)
     return true;
 }
 
+// Sign ]
+// CheckSignature [
+
 bool CMasternodeBroadcast::CheckSignature(int& nDos) const
 {
     std::string strError = "";
@@ -694,6 +754,9 @@ bool CMasternodeBroadcast::CheckSignature(int& nDos) const
     return true;
 }
 
+// CheckSignature ]
+// Relay [
+
 void CMasternodeBroadcast::Relay(CConnman& connman) const
 {
     // Do not relay until fully synced
@@ -705,6 +768,14 @@ void CMasternodeBroadcast::Relay(CConnman& connman) const
     CInv inv(MSG_MASTERNODE_ANNOUNCE, GetHash());
     connman.RelayInv(inv);
 }
+
+// Relay ]
+
+// class CMasternodeBroadcast ]
+
+// class CMasternodePing [
+
+// GetHash GetSignatureHash [
 
 uint256 CMasternodePing::GetHash() const
 {
@@ -731,6 +802,9 @@ uint256 CMasternodePing::GetSignatureHash() const
     return GetHash();
 }
 
+// GetHash GetSignatureHash ]
+// constructor CMasternodePing [
+
 CMasternodePing::CMasternodePing(const COutPoint& outpoint)
 {
     LOCK(cs_main);
@@ -741,6 +815,9 @@ CMasternodePing::CMasternodePing(const COutPoint& outpoint)
     sigTime = GetAdjustedTime();
     nDaemonVersion = CLIENT_VERSION;
 }
+
+// constructor CMasternodePing ]
+// Sign [
 
 bool CMasternodePing::Sign(const CKey& keyMasternode, const CPubKey& pubKeyMasternode)
 {
@@ -778,6 +855,9 @@ bool CMasternodePing::Sign(const CKey& keyMasternode, const CPubKey& pubKeyMaste
     return true;
 }
 
+// Sign ]
+// CheckSignature [
+
 bool CMasternodePing::CheckSignature(const CPubKey& pubKeyMasternode, int &nDos) const
 {
     std::string strError = "";
@@ -810,6 +890,9 @@ bool CMasternodePing::CheckSignature(const CPubKey& pubKeyMasternode, int &nDos)
     return true;
 }
 
+// CheckSignature ]
+// SimpleCheck [
+
 bool CMasternodePing::SimpleCheck(int& nDos)
 {
     // don't ban by default
@@ -835,6 +918,9 @@ bool CMasternodePing::SimpleCheck(int& nDos)
     LogPrint("masternode", "CMasternodePing::SimpleCheck -- Masternode ping verified: masternode=%s  blockHash=%s  sigTime=%d\n", masternodeOutpoint.ToStringShort(), blockHash.ToString(), sigTime);
     return true;
 }
+
+// SimpleCheck ]
+// CheckAndUpdate [
 
 bool CMasternodePing::CheckAndUpdate(CMasternode* pmn, bool fFromNewBroadcast, int& nDos, CConnman& connman)
 {
@@ -918,6 +1004,9 @@ bool CMasternodePing::CheckAndUpdate(CMasternode* pmn, bool fFromNewBroadcast, i
     return true;
 }
 
+// CheckAndUpdate ]
+// Relay [
+
 void CMasternodePing::Relay(CConnman& connman)
 {
     // Do not relay until fully synced
@@ -930,6 +1019,14 @@ void CMasternodePing::Relay(CConnman& connman)
     connman.RelayInv(inv);
 }
 
+// Relay ]
+
+// class CMasternodePing ]
+
+// class CMasternode 1 [
+
+// AddGovernanceVote [
+
 void CMasternode::AddGovernanceVote(uint256 nGovernanceObjectHash)
 {
     if(mapGovernanceObjectsVotedOn.count(nGovernanceObjectHash)) {
@@ -939,6 +1036,9 @@ void CMasternode::AddGovernanceVote(uint256 nGovernanceObjectHash)
     }
 }
 
+// AddGovernanceVote ]
+// RemoveGovernanceObject [
+
 void CMasternode::RemoveGovernanceObject(uint256 nGovernanceObjectHash)
 {
     std::map<uint256, int>::iterator it = mapGovernanceObjectsVotedOn.find(nGovernanceObjectHash);
@@ -947,6 +1047,9 @@ void CMasternode::RemoveGovernanceObject(uint256 nGovernanceObjectHash)
     }
     mapGovernanceObjectsVotedOn.erase(it);
 }
+
+// RemoveGovernanceObject ]
+// FlagGovernanceItemsAsDirty [
 
 /**
 *   FLAG GOVERNANCE ITEMS AS DIRTY
@@ -968,3 +1071,7 @@ void CMasternode::FlagGovernanceItemsAsDirty()
         mnodeman.AddDirtyGovernanceObjectHash(vecDirty[i]);
     }
 }
+
+// FlagGovernanceItemsAsDirty ]
+
+// class CMasternode 1 ]

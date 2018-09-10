@@ -8,6 +8,7 @@
 #include "hash.h"
 #include "tinyformat.h"
 #include "utilstrencodings.h"
+#include "timedata.h"
 
 std::string COutPoint::ToString() const
 {
@@ -62,8 +63,12 @@ std::string CTxOut::ToString() const
 
 // f1.3 CMutableTransaction nTime [
 
-CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::CURRENT_VERSION), nLockTime(0), nTime(0) {}
-CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), nTime(tx.nTime) {}
+CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::CURRENT_VERSION), nLockTime(0), nTime(0) {
+    nTime = GetAdjustedTime();
+}
+
+CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), nTime(tx.nTime)
+{}
 
 // f1.3 CMutableTransaction nTime ]
 
@@ -100,14 +105,18 @@ uint256 CTransaction::ComputeHash() const
     return SerializeHash(*this);
 }
 
-// f2.4 CTransaction nTime [
+// f2.3 CTransaction nTime [
 
 /* For backward compatibility, the hash is initialized to 0. TODO: remove the need for this default constructor entirely. */
-CTransaction::CTransaction() : nVersion(CTransaction::CURRENT_VERSION), vin(), vout(), nLockTime(0), hash(), nTime(0) {}
+CTransaction::CTransaction() : nVersion(CTransaction::CURRENT_VERSION), vin(), vout(), nLockTime(0), hash(), nTime(0) {
+    nTime = GetAdjustedTime();
+}
+
 CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), hash(ComputeHash()), nTime(tx.nTime) {}
+
 CTransaction::CTransaction(CMutableTransaction &&tx) : nVersion(tx.nVersion), vin(std::move(tx.vin)), vout(std::move(tx.vout)), nLockTime(tx.nLockTime), hash(ComputeHash()), nTime(tx.nTime) {}
 
-// f2.4 CTransaction nTime ]
+// f2.3 CTransaction nTime ]
 
 CAmount CTransaction::GetValueOut() const
 {

@@ -15,8 +15,12 @@
 
 static const int PROTOCOL_VERSION = 70210;
 
+// u.1.5 INIT_PROTO_VERSION thegcc-old = 63012 [
+
 //! initial proto version, to be increased after version/verack negotiation
-static const int INIT_PROTO_VERSION = 209;
+static const int INIT_PROTO_VERSION = 63012; // thegcc-old, thegcc-new=70210, dash=209;
+
+// u.1.5 INIT_PROTO_VERSION thegcc-old = 63012 ]
 
 //! In this version, 'getheaders' was introduced.
 static const int GETHEADERS_VERSION = 70077;
@@ -28,10 +32,13 @@ static const int GETHEADERS_VERSION = 70077;
 static const int MIN_PEER_PROTO_VERSION = 63010;
 
 // p1.1 - MIN_PEER_PROTO_VERSION = 63010 ]
+// u.1.4 - CADDR_TIME_VERSION = 61001 [
 
 //! nTime field added to CAddress, starting with this version;
 //! if possible, avoid requesting addresses nodes older than this
-static const int CADDR_TIME_VERSION = 31402;
+static const int CADDR_TIME_VERSION = 61001; // thegcc-old, dash=31402;
+
+// u.1.4 - CADDR_TIME_VERSION = 61001 ]
 
 //! BIP 0031, pong message, is enabled for all versions AFTER this one
 static const int BIP0031_VERSION = 60000;

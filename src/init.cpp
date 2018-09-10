@@ -91,6 +91,9 @@
 
 extern void ThreadSendAlert(CConnman& connman);
 
+extern void ThreadStakeMinter();
+
+
 bool fFeeEstimatesInitialized = false;
 static const bool DEFAULT_PROXYRANDOMIZE = true;
 static const bool DEFAULT_REST_ENABLE = false;
@@ -1346,6 +1349,12 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
         ShrinkDebugFile();
     }
 
+    //x l.4 llog debug.log frontail [
+
+    // llogLog(L"DEBUG/debug.log frontail", L"debug", L"http://localhost:9701/");
+
+    //x l.4 llog debug.log frontail ]
+
     if (fPrintToDebugLog)
         OpenDebugLog();
 
@@ -1998,6 +2007,16 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (!connman.Start(scheduler, strNodeError, connOptions))
         return InitError(strNodeError);
 
+    // m.5.1 generate pow for testnet [
+
+#ifdef ENABLE_WALLET
+    // Generate coins in the background
+    if (pwalletMain)
+        GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", 1));
+#endif
+
+    // m.5.1 generate pow for testnet ]
+
     // ********************************************************* Step 13: finished
 
     SetRPCWarmupFinished();
@@ -2009,6 +2028,14 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 #endif
 
     threadGroup.create_thread(boost::bind(&ThreadSendAlert, boost::ref(connman)));
+
+    // m.5.2 generate pos staking [
+
+    // ppcoin:mint proof-of-stake blocks in the background
+    if (GetBoolArg("-staking", true))
+        threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "stakemint", &ThreadStakeMinter));
+
+    // m.5.2 generate pos staking ]
 
     return !fRequestShutdown;
 }

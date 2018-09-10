@@ -328,6 +328,9 @@ bool IsLimited(const CNetAddr &addr)
     return IsLimited(addr.GetNetwork());
 }
 
+// Limited ]
+// SeenLocal IsLocal [
+
 /** vote for a local address */
 bool SeenLocal(const CService& addr)
 {
@@ -348,7 +351,7 @@ bool IsLocal(const CService& addr)
     return mapLocalHost.count(addr) > 0;
 }
 
-// Limited ]
+// SeenLocal IsLocal ]
 // IsReachable [
 
 /** check whether a given network is one we can probably connect to */
@@ -3227,6 +3230,39 @@ void CConnman::PushMessage(CNode* pnode, CSerializedNetMsg&& msg)
         is >> c;
         is >> s1;
         ss << "\n" << " reject: " << s0.c_str() << ": " << s1.c_str();
+    }
+    else if (msg.command == "version") {
+        llogLog(L"CConnman/send", L"send", msg.data.data(), (int)msg.data.size(), 0);
+
+/*        uint64_t nLocalNodeServices;
+        uint64_t nTime;
+        CAddress addrYou;
+        CAddress addrMe;
+        uint64_t nonce;
+        std::string strSubVersion;
+        int nNodeStartingHeight;
+        bool fRelayTxes;
+        int protocolVersion;
+        uint64_t verification_token;
+
+        is >> protocolVersion >> nLocalNodeServices >> nTime >> addrYou >> addrMe;
+        is >> verification_token >> nonce >> strSubVersion;
+        is >> nNodeStartingHeight;
+        is >> fRelayTxes;
+
+//        connman.PushMessage(pnode, CNetMsgMaker(INIT_PROTO_VERSION).Make(NetMsgType::VERSION, PROTOCOL_VERSION, (uint64_t)nLocalNodeServices, nTime, addrYou, addrMe,
+//                                                                         nonce, strSubVersion, nNodeStartingHeight, ::fRelayTxes));
+
+        ss << " protocolVersion " << protocolVersion << "\n";
+        ss << " nLocalNodeServices " << nLocalNodeServices << "\n";
+        ss << " nTime " << nTime << std::hex << " 0x" << nTime << std::dec <<"\n";
+        ss << " addrYou " << addrYou.ToString().c_str() << "\n";
+        ss << " addrMe " << addrYou.ToString().c_str() << "\n";
+        ss << " verification_token 0x" << std::hex << verification_token << std::dec << "\n";
+        ss << " nonce 0x" << std::hex << nonce << std::dec << "\n";
+        ss << " strSubVersion " << strSubVersion.c_str() << "\n";
+        ss << " nNodeStartingHeight " << nNodeStartingHeight << "\n";
+        ss << " fRelayTxes " << fRelayTxes << "\n";*/
     }
 
     llogLog(L"CConnman/send", L"PushMessage", ss.str());

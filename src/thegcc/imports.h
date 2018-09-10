@@ -74,6 +74,7 @@
 #include "thegcc/masternode/Masternode.h"
 #include "thegcc/validation/Block.h"
 #include "thegcc/kernel/Kernel.h"
+#include "thegcc/miner/Miner.h"
 
 // thegcc ]
 // 1 [
