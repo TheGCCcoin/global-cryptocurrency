@@ -203,7 +203,7 @@ bool AppInit(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-    SetupEnvironment(); 
+    SetupEnvironment();
 
     // Connect TheGCCcoind signal handlers
     noui_connect();

@@ -1504,6 +1504,25 @@ bool IsInitialBlockDownload()
     LOCK(cs_main);
     if (latchToFalse.load(std::memory_order_relaxed))
         return false;
+
+    // l.22 llog state [
+    {
+        llogLog(L"IsInitialBlockDownload/state", L"Importing", fImporting, true);
+        llogLog(L"IsInitialBlockDownload/state", L"Reindex", fReindex);
+        llogLog(L"IsInitialBlockDownload/state", L"(fImporting || fReindex) ==", fImporting || fReindex);
+
+        const CChainParams &chainParams = Params();
+        CBlockIndex *bi = chainActive.Tip();
+        if (bi) {
+            llogLog(L"IsInitialBlockDownload/state", L"chainActive tip", *bi);
+            llogLog(L"IsInitialBlockDownload/state", L"(chainActive.Tip()->nChainWork < UintToArith256(chainParams.GetConsensus().nMinimumChainWork)) ==", chainActive.Tip()->nChainWork < UintToArith256(chainParams.GetConsensus().nMinimumChainWork));
+            llogLog(L"IsInitialBlockDownload/state", L"(chainActive.Tip()->GetBlockTime() < (GetTime() - nMaxTipAge)) ==", chainActive.Tip()->GetBlockTime() < (GetTime() - nMaxTipAge));
+        }
+        else
+            llogLog(L"IsInitialBlockDownload/state", L"chainActive tip", "NULL");
+    }
+    // l.22 llog state ]
+
     if (fImporting || fReindex)
         return true;
     const CChainParams& chainParams = Params();

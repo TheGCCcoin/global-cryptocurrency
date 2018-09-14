@@ -21,6 +21,8 @@
 
 #include <boost/lexical_cast.hpp>
 
+// CDarkSendEntry [
+
 bool CDarkSendEntry::AddScriptSig(const CTxIn& txin)
 {
     for (auto& txdsin : vecTxDSIn) {
@@ -36,6 +38,9 @@ bool CDarkSendEntry::AddScriptSig(const CTxIn& txin)
 
     return false;
 }
+
+// CDarkSendEntry ]
+// CDarksendQueue [
 
 uint256 CDarksendQueue::GetSignatureHash() const
 {
@@ -117,6 +122,9 @@ bool CDarksendQueue::Relay(CConnman& connman)
     return true;
 }
 
+// CDarksendQueue ]
+// CDarksendBroadcastTx [
+
 uint256 CDarksendBroadcastTx::GetSignatureHash() const
 {
     return SerializeHash(*this);
@@ -186,6 +194,9 @@ bool CDarksendBroadcastTx::IsExpired(int nHeight)
     // expire confirmed DSTXes after ~1h since confirmation
     return (nConfirmedHeight != -1) && (nHeight - nConfirmedHeight > 24);
 }
+
+// CDarksendBroadcastTx ]
+// CPrivateSend [
 
 void CPrivateSendBase::SetNull()
 {
@@ -511,6 +522,9 @@ void CPrivateSend::SyncTransaction(const CTransaction& tx, const CBlockIndex *pi
     LogPrint("privatesend", "CPrivateSendClient::SyncTransaction -- txid=%s\n", txHash.ToString());
 }
 
+// CPrivateSend ]
+// ThreadCheckPrivateSend - review [
+
 //TODO: Rename/move to core
 void ThreadCheckPrivateSend(CConnman& connman)
 {
@@ -565,3 +579,6 @@ void ThreadCheckPrivateSend(CConnman& connman)
         }
     }
 }
+
+// ThreadCheckPrivateSend - review ]
+// ThreadCheckPrivateSend ]

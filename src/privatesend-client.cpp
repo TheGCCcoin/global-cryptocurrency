@@ -18,6 +18,8 @@
 
 #include <memory>
 
+// CPrivateSendClient [
+
 CPrivateSendClient privateSendClient;
 
 void CPrivateSendClient::ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman)
@@ -1448,6 +1450,9 @@ void CPrivateSendClient::UpdatedBlockTip(const CBlockIndex *pindex)
 
 }
 
+// CPrivateSendClient ]
+// ThreadCheckPrivateSendClient - todo: review [
+
 //TODO: Rename/move to core
 void ThreadCheckPrivateSendClient(CConnman& connman)
 {
@@ -1479,3 +1484,5 @@ void ThreadCheckPrivateSendClient(CConnman& connman)
         }
     }
 }
+
+// ThreadCheckPrivateSendClient - todo: review ]

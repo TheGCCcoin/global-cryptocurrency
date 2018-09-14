@@ -39,9 +39,12 @@ SOFTWARE.
 #include <map>
 #include <vector>
 #include <iterator>
+#include <time.h>
+#include <unistd.h>
 
 namespace acpul {
 
+    // LiveLogBasic [
 
     class LiveLogBasic {
     protected:
@@ -103,6 +106,9 @@ namespace acpul {
             _fs.flush();
         }
     };
+
+    // LiveLogBasic ]
+    // LCNode [
 
     class LCNode {
         std::wstring _name;
@@ -196,22 +202,40 @@ namespace acpul {
         {}
     };
 
+    // LCNode ]
+    // LiveLog [
+
     class LiveLog : public LiveLogBasic {
         LCNode _tree;
         std::string _filename;
+        bool _modified;
+
+        time_t _timeFlushPrev;
+
+        int _flushTimeout;
+        double _flushTimeDelta;
 
     public:
         LiveLog(const char *filename)
         : LiveLogBasic(filename)
         , _tree(L"LiveLog++")
         , _filename(filename)
+        , _modified(true)
+        , _flushTimeout(0)
         {}
 
         ~LiveLog()
         {}
 
+        void setFlushTimeout(int flushTimeout)
+        {
+            _flushTimeout = flushTimeout;
+        }
+
         void log(std::wstring path, std::wstring s, bool replace)
         {
+            _modified = true;
+
             std::vector<std::wstring> vstrings;
 
             std::wstringstream ss(path);
@@ -235,10 +259,33 @@ namespace acpul {
         }
 
         void erase(std::wstring path)
-        {}
-
-        void flush()
         {
+            _modified = true;
+        }
+
+        void flush(bool force = false)
+        {
+            if (!_modified)
+                return;
+
+            // check time diff [
+
+            if (!force && _flushTimeout > 0) {
+                time_t timeEnd;
+                time(&timeEnd);
+                double timeDiff;
+                timeDiff = difftime(timeEnd, _timeFlushPrev);
+                _timeFlushPrev = timeEnd;
+                _flushTimeDelta += timeDiff;
+
+                if (_flushTimeDelta < _flushTimeout)
+                    return;
+
+                _flushTimeDelta = 0;
+            }
+
+            // check time diff ]
+
             // clear hack
             _fs.close();
             _fs = std::wofstream(_filename);
@@ -246,6 +293,8 @@ namespace acpul {
             flushNode(&_tree);
 
             _fs.flush();
+
+            _modified = false;
         }
 
         void flushNode(LCNode *node)
@@ -264,6 +313,8 @@ namespace acpul {
             end();
         }
     };
+
+    // LiveLog ]
 }
 
 #endif

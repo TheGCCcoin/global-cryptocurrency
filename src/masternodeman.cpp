@@ -1,6 +1,7 @@
 // Copyright (c) 2014-2017 The GCC Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// @ [
 
 #include "activemasternode.h"
 #include "addrman.h"
@@ -23,11 +24,17 @@
 
 #include "livelog/llog-dump.h"
 
+// @ ]
+// vars [
+
 /** Masternode manager */
 CMasternodeMan mnodeman;
 
 const std::string CMasternodeMan::SERIALIZATION_VERSION_STRING = "CMasternodeMan-Version-8";
 const int CMasternodeMan::LAST_PAID_SCAN_BLOCKS = 100;
+
+// vars ]
+// Compare* [
 
 struct CompareLastPaidBlock
 {
@@ -57,6 +64,10 @@ struct CompareByAddr
     }
 };
 
+// Compare* ]
+// CMasternodeMan [
+// constructor [
+
 CMasternodeMan::CMasternodeMan():
     cs(),
     mapMasternodes(),
@@ -78,6 +89,9 @@ CMasternodeMan::CMasternodeMan():
     llogLog(L"Masternode/log", L"create CMasternodeMan\n");
 }
 
+// constructor ]
+// Add [
+
 bool CMasternodeMan::Add(CMasternode &mn)
 {
     LOCK(cs);
@@ -89,6 +103,9 @@ bool CMasternodeMan::Add(CMasternode &mn)
     fMasternodesAdded = true;
     return true;
 }
+
+// Add ]
+// AskForMN [
 
 void CMasternodeMan::AskForMN(CNode* pnode, const COutPoint& outpoint, CConnman& connman)
 {
@@ -125,6 +142,9 @@ void CMasternodeMan::AskForMN(CNode* pnode, const COutPoint& outpoint, CConnman&
     }
 }
 
+// AskForMN ]
+// AllowMixing [
+
 bool CMasternodeMan::AllowMixing(const COutPoint &outpoint)
 {
     LOCK(cs);
@@ -139,6 +159,9 @@ bool CMasternodeMan::AllowMixing(const COutPoint &outpoint)
     return true;
 }
 
+// AllowMixing ]
+// DisallowMixing [
+
 bool CMasternodeMan::DisallowMixing(const COutPoint &outpoint)
 {
     LOCK(cs);
@@ -150,6 +173,9 @@ bool CMasternodeMan::DisallowMixing(const COutPoint &outpoint)
 
     return true;
 }
+
+// DisallowMixing ]
+// PoSeBan [
 
 bool CMasternodeMan::PoSeBan(const COutPoint &outpoint)
 {
@@ -163,6 +189,9 @@ bool CMasternodeMan::PoSeBan(const COutPoint &outpoint)
     return true;
 }
 
+// PoSeBan ]
+// Check [
+
 void CMasternodeMan::Check()
 {
     LOCK2(cs_main, cs);
@@ -175,6 +204,9 @@ void CMasternodeMan::Check()
         mnpair.second.Check();
     }
 }
+
+// Check ]
+// CheckAndRemove [
 
 void CMasternodeMan::CheckAndRemove(CConnman& connman)
 {
@@ -360,6 +392,9 @@ void CMasternodeMan::CheckAndRemove(CConnman& connman)
     }
 }
 
+// CheckAndRemove ]
+// Clear [
+
 void CMasternodeMan::Clear()
 {
     LOCK(cs);
@@ -372,6 +407,9 @@ void CMasternodeMan::Clear()
     nDsqCount = 0;
     nLastSentinelPingTime = 0;
 }
+
+// Clear ]
+// CountMasternodes [
 
 int CMasternodeMan::CountMasternodes(int nProtocolVersion)
 {
@@ -387,6 +425,9 @@ int CMasternodeMan::CountMasternodes(int nProtocolVersion)
     return nCount;
 }
 
+// CountMasternodes ]
+// CountEnabled [
+
 int CMasternodeMan::CountEnabled(int nProtocolVersion)
 {
     LOCK(cs);
@@ -400,6 +441,8 @@ int CMasternodeMan::CountEnabled(int nProtocolVersion)
 
     return nCount;
 }
+
+// CountEnabled ]
 
 /* Only IPv4 masternodes are allowed in 12.1, saving this for later
 int CMasternodeMan::CountByIP(int nNetworkType)
@@ -417,6 +460,8 @@ int CMasternodeMan::CountByIP(int nNetworkType)
     return nNodeCount;
 }
 */
+
+// DsegUpdate [
 
 void CMasternodeMan::DsegUpdate(CNode* pnode, CConnman& connman)
 {
@@ -445,12 +490,18 @@ void CMasternodeMan::DsegUpdate(CNode* pnode, CConnman& connman)
     LogPrint("masternode", "CMasternodeMan::DsegUpdate -- asked %s for the list\n", pnode->addr.ToString());
 }
 
+// DsegUpdate ]
+// Find [
+
 CMasternode* CMasternodeMan::Find(const COutPoint &outpoint)
 {
     LOCK(cs);
     auto it = mapMasternodes.find(outpoint);
     return it == mapMasternodes.end() ? NULL : &(it->second);
 }
+
+// Find ]
+// Get [
 
 bool CMasternodeMan::Get(const COutPoint& outpoint, CMasternode& masternodeRet)
 {
@@ -464,6 +515,9 @@ bool CMasternodeMan::Get(const COutPoint& outpoint, CMasternode& masternodeRet)
     masternodeRet = it->second;
     return true;
 }
+
+// Get ]
+// GetMasternodeInfo [
 
 bool CMasternodeMan::GetMasternodeInfo(const COutPoint& outpoint, masternode_info_t& mnInfoRet)
 {
@@ -501,11 +555,17 @@ bool CMasternodeMan::GetMasternodeInfo(const CScript& payee, masternode_info_t& 
     return false;
 }
 
+// GetMasternodeInfo ]
+// Has [
+
 bool CMasternodeMan::Has(const COutPoint& outpoint)
 {
     LOCK(cs);
     return mapMasternodes.find(outpoint) != mapMasternodes.end();
 }
+
+// Has ]
+// GetNextMasternodeInQueueForPayment [
 
 //
 // Deterministically select the oldest/best masternode to pay on the network
@@ -591,6 +651,9 @@ bool CMasternodeMan::GetNextMasternodeInQueueForPayment(int nBlockHeight, bool f
     return mnInfoRet.fInfoValid;
 }
 
+// GetNextMasternodeInQueueForPayment ]
+// FindRandomNotInVec [
+
 masternode_info_t CMasternodeMan::FindRandomNotInVec(const std::vector<COutPoint> &vecToExclude, int nProtocolVersion)
 {
     LOCK(cs);
@@ -634,6 +697,9 @@ masternode_info_t CMasternodeMan::FindRandomNotInVec(const std::vector<COutPoint
     return masternode_info_t();
 }
 
+// FindRandomNotInVec ]
+// GetMasternodeScores [
+
 bool CMasternodeMan::GetMasternodeScores(const uint256& nBlockHash, CMasternodeMan::score_pair_vec_t& vecMasternodeScoresRet, int nMinProtocol)
 {
     vecMasternodeScoresRet.clear();
@@ -656,6 +722,9 @@ bool CMasternodeMan::GetMasternodeScores(const uint256& nBlockHash, CMasternodeM
     sort(vecMasternodeScoresRet.rbegin(), vecMasternodeScoresRet.rend(), CompareScoreMN());
     return !vecMasternodeScoresRet.empty();
 }
+
+// GetMasternodeScores ]
+// GetMasternodeRank [
 
 bool CMasternodeMan::GetMasternodeRank(const COutPoint& outpoint, int& nRankRet, int nBlockHeight, int nMinProtocol)
 {
@@ -689,6 +758,9 @@ bool CMasternodeMan::GetMasternodeRank(const COutPoint& outpoint, int& nRankRet,
     return false;
 }
 
+// GetMasternodeRank ]
+// GetMasternodeRanks [
+
 bool CMasternodeMan::GetMasternodeRanks(CMasternodeMan::rank_pair_vec_t& vecMasternodeRanksRet, int nBlockHeight, int nMinProtocol)
 {
     vecMasternodeRanksRet.clear();
@@ -718,6 +790,9 @@ bool CMasternodeMan::GetMasternodeRanks(CMasternodeMan::rank_pair_vec_t& vecMast
     return true;
 }
 
+// GetMasternodeRanks ]
+// ProcessMasternodeConnections - !!! [
+
 void CMasternodeMan::ProcessMasternodeConnections(CConnman& connman)
 {
     //we don't care about this for regtest
@@ -734,6 +809,9 @@ void CMasternodeMan::ProcessMasternodeConnections(CConnman& connman)
         }
     });
 }
+
+// ProcessMasternodeConnections - !!! ]
+// PopScheduledMnbRequestConnection [
 
 std::pair<CService, std::set<uint256> > CMasternodeMan::PopScheduledMnbRequestConnection()
 {
@@ -761,6 +839,9 @@ std::pair<CService, std::set<uint256> > CMasternodeMan::PopScheduledMnbRequestCo
     }
     return std::make_pair(pairFront.first, setResult);
 }
+
+// PopScheduledMnbRequestConnection ]
+// ProcessPendingMnbRequests [
 
 void CMasternodeMan::ProcessPendingMnbRequests(CConnman& connman)
 {
@@ -804,6 +885,9 @@ void CMasternodeMan::ProcessPendingMnbRequests(CConnman& connman)
     }
     LogPrint("masternode", "%s -- mapPendingMNB size: %d\n", __func__, mapPendingMNB.size());
 }
+
+// ProcessPendingMnbRequests ]
+// ProcessMessage [
 
 void CMasternodeMan::ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman)
 {
@@ -927,6 +1011,9 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, const std::string& strCommand,
     }
 }
 
+// ProcessMessage ]
+// SyncSingle [
+
 void CMasternodeMan::SyncSingle(CNode* pnode, const COutPoint& outpoint, CConnman& connman)
 {
     // do not provide any data until our node is synced
@@ -944,6 +1031,9 @@ void CMasternodeMan::SyncSingle(CNode* pnode, const COutPoint& outpoint, CConnma
         LogPrintf("CMasternodeMan::%s -- Sent 1 Masternode inv to peer=%d\n", __func__, pnode->id);
     }
 }
+
+// SyncSingle ]
+// SyncAll [
 
 void CMasternodeMan::SyncAll(CNode* pnode, CConnman& connman)
 {
@@ -983,6 +1073,9 @@ void CMasternodeMan::SyncAll(CNode* pnode, CConnman& connman)
     LogPrintf("CMasternodeMan::%s -- Sent %d Masternode invs to peer=%d\n", __func__, nInvCount, pnode->id);
 }
 
+// SyncAll ]
+// PushDsegInvs [
+
 void CMasternodeMan::PushDsegInvs(CNode* pnode, const CMasternode& mn)
 {
     AssertLockHeld(cs);
@@ -996,6 +1089,9 @@ void CMasternodeMan::PushDsegInvs(CNode* pnode, const CMasternode& mn)
     mapSeenMasternodeBroadcast.insert(std::make_pair(hashMNB, std::make_pair(GetTime(), mnb)));
     mapSeenMasternodePing.insert(std::make_pair(hashMNP, mnp));
 }
+
+// PushDsegInvs ]
+// DoFullVerificationStep [
 
 // Verification of masternodes via unique direct requests.
 
@@ -1073,6 +1169,9 @@ void CMasternodeMan::DoFullVerificationStep(CConnman& connman)
     LogPrint("masternode", "CMasternodeMan::DoFullVerificationStep -- Sent verification requests to %d masternodes\n", nCount);
 }
 
+// DoFullVerificationStep ]
+// CheckSameAddr [
+
 // This function tries to find masternodes with the same addr,
 // find a verified one and ban all the other. If there are many nodes
 // with the same addr but none of them is verified yet, then none of them are banned.
@@ -1131,6 +1230,9 @@ void CMasternodeMan::CheckSameAddr()
     }
 }
 
+// CheckSameAddr ]
+// SendVerifyRequest [
+
 bool CMasternodeMan::SendVerifyRequest(const CAddress& addr, const std::vector<const CMasternode*>& vSortedByAddr, CConnman& connman)
 {
     if(netfulfilledman.HasFulfilledRequest(addr, strprintf("%s", NetMsgType::MNVERIFY)+"-request")) {
@@ -1149,6 +1251,9 @@ bool CMasternodeMan::SendVerifyRequest(const CAddress& addr, const std::vector<c
     LogPrintf("CMasternodeMan::SendVerifyRequest -- verifying node using nonce %d addr=%s\n", mnv.nonce, addr.ToString());
     return true;
 }
+
+// SendVerifyRequest ]
+// ProcessPendingMnvRequests [
 
 void CMasternodeMan::ProcessPendingMnvRequests(CConnman& connman)
 {
@@ -1179,6 +1284,9 @@ void CMasternodeMan::ProcessPendingMnvRequests(CConnman& connman)
     }
     LogPrint("masternode", "%s -- mapPendingMNV size: %d\n", __func__, mapPendingMNV.size());
 }
+
+// ProcessPendingMnvRequests ]
+// SendVerifyReply [
 
 void CMasternodeMan::SendVerifyReply(CNode* pnode, CMasternodeVerification& mnv, CConnman& connman)
 {
@@ -1236,6 +1344,9 @@ void CMasternodeMan::SendVerifyReply(CNode* pnode, CMasternodeVerification& mnv,
     connman.PushMessage(pnode, msgMaker.Make(NetMsgType::MNVERIFY, mnv));
     netfulfilledman.AddFulfilledRequest(pnode->addr, strprintf("%s", NetMsgType::MNVERIFY)+"-reply");
 }
+
+// SendVerifyReply ]
+// ProcessVerifyReply [
 
 void CMasternodeMan::ProcessVerifyReply(CNode* pnode, CMasternodeVerification& mnv)
 {
@@ -1373,6 +1484,9 @@ void CMasternodeMan::ProcessVerifyReply(CNode* pnode, CMasternodeVerification& m
     }
 }
 
+// ProcessVerifyReply ]
+// ProcessVerifyBroadcast [
+
 void CMasternodeMan::ProcessVerifyBroadcast(CNode* pnode, const CMasternodeVerification& mnv)
 {
     AssertLockHeld(cs_main);
@@ -1494,6 +1608,9 @@ void CMasternodeMan::ProcessVerifyBroadcast(CNode* pnode, const CMasternodeVerif
     }
 }
 
+// ProcessVerifyBroadcast ]
+// ToString [
+
 std::string CMasternodeMan::ToString() const
 {
     std::ostringstream info;
@@ -1506,6 +1623,9 @@ std::string CMasternodeMan::ToString() const
 
     return info.str();
 }
+
+// ToString ]
+// CheckMnbAndUpdateMasternodeList [
 
 bool CMasternodeMan::CheckMnbAndUpdateMasternodeList(CNode* pfrom, CMasternodeBroadcast mnb, int& nDos, CConnman& connman)
 {
@@ -1600,6 +1720,9 @@ bool CMasternodeMan::CheckMnbAndUpdateMasternodeList(CNode* pfrom, CMasternodeBr
     return true;
 }
 
+// CheckMnbAndUpdateMasternodeList ]
+// UpdateLastPaid [
+
 void CMasternodeMan::UpdateLastPaid(const CBlockIndex* pindex)
 {
     LOCK(cs);
@@ -1621,11 +1744,17 @@ void CMasternodeMan::UpdateLastPaid(const CBlockIndex* pindex)
     nLastRunBlockHeight = nCachedBlockHeight;
 }
 
+// UpdateLastPaid ]
+// UpdateLastSentinelPingTime [
+
 void CMasternodeMan::UpdateLastSentinelPingTime()
 {
     LOCK(cs);
     nLastSentinelPingTime = GetTime();
 }
+
+// UpdateLastSentinelPingTime ]
+// IsSentinelPingActive [
 
 bool CMasternodeMan::IsSentinelPingActive()
 {
@@ -1633,6 +1762,9 @@ bool CMasternodeMan::IsSentinelPingActive()
     // Check if any masternodes have voted recently, otherwise return false
     return (GetTime() - nLastSentinelPingTime) <= MASTERNODE_SENTINEL_PING_MAX_SECONDS;
 }
+
+// IsSentinelPingActive ]
+// AddGovernanceVote [
 
 bool CMasternodeMan::AddGovernanceVote(const COutPoint& outpoint, uint256 nGovernanceObjectHash)
 {
@@ -1645,6 +1777,9 @@ bool CMasternodeMan::AddGovernanceVote(const COutPoint& outpoint, uint256 nGover
     return true;
 }
 
+// AddGovernanceVote ]
+// RemoveGovernanceObject [
+
 void CMasternodeMan::RemoveGovernanceObject(uint256 nGovernanceObjectHash)
 {
     LOCK(cs);
@@ -1652,6 +1787,9 @@ void CMasternodeMan::RemoveGovernanceObject(uint256 nGovernanceObjectHash)
         mnpair.second.RemoveGovernanceObject(nGovernanceObjectHash);
     }
 }
+
+// RemoveGovernanceObject ]
+// CheckMasternode [
 
 void CMasternodeMan::CheckMasternode(const CPubKey& pubKeyMasternode, bool fForce)
 {
@@ -1664,12 +1802,18 @@ void CMasternodeMan::CheckMasternode(const CPubKey& pubKeyMasternode, bool fForc
     }
 }
 
+// CheckMasternode ]
+// IsMasternodePingedWithin [
+
 bool CMasternodeMan::IsMasternodePingedWithin(const COutPoint& outpoint, int nSeconds, int64_t nTimeToCheckAt)
 {
     LOCK(cs);
     CMasternode* pmn = Find(outpoint);
     return pmn ? pmn->IsPingedWithin(nSeconds, nTimeToCheckAt) : false;
 }
+
+// IsMasternodePingedWithin ]
+// SetMasternodeLastPing [
 
 void CMasternodeMan::SetMasternodeLastPing(const COutPoint& outpoint, const CMasternodePing& mnp)
 {
@@ -1691,6 +1835,9 @@ void CMasternodeMan::SetMasternodeLastPing(const COutPoint& outpoint, const CMas
     }
 }
 
+// SetMasternodeLastPing ]
+// UpdatedBlockTip [
+
 void CMasternodeMan::UpdatedBlockTip(const CBlockIndex *pindex)
 {
     nCachedBlockHeight = pindex->nHeight;
@@ -1703,6 +1850,9 @@ void CMasternodeMan::UpdatedBlockTip(const CBlockIndex *pindex)
         UpdateLastPaid(pindex);
     }
 }
+
+// UpdatedBlockTip ]
+// WarnMasternodeDaemonUpdates [
 
 void CMasternodeMan::WarnMasternodeDaemonUpdates()
 {
@@ -1745,6 +1895,9 @@ void CMasternodeMan::WarnMasternodeDaemonUpdates()
     fWarned = true;
 }
 
+// WarnMasternodeDaemonUpdates ]
+// NotifyMasternodeUpdates [
+
 void CMasternodeMan::NotifyMasternodeUpdates(CConnman& connman)
 {
     // Avoid double locking
@@ -1768,3 +1921,6 @@ void CMasternodeMan::NotifyMasternodeUpdates(CConnman& connman)
     fMasternodesAdded = false;
     fMasternodesRemoved = false;
 }
+
+// NotifyMasternodeUpdates ]
+// CMasternodeMan ]

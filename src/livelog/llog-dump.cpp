@@ -25,26 +25,105 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
+// @ [
 
 #include <sys/stat.h>
 #include <pthread.h>
 #include <iomanip>
+#include <ctime>
 
 #include "livelog.h"
 #include "llog-dump.h"
 
 #include "../chain.h"
 
+using namespace acpul;
+
+// @ ]
+// vars [
+
 const wchar_t *liveLoggingBannerShort = L"Dash v12.3 / Bitcoin Core / Blockchain LiveLogging++ dump\n"
         "MIT License\n"
         "Copyright (c) 2014-2018 Web3 Crypto Wallet Team\n"
         " info@web3cryptowallet.com\n";
 
-using namespace acpul;
-
 LiveLog *llog = NULL;
 
 pthread_mutex_t _llogMutex = PTHREAD_MUTEX_INITIALIZER;
+
+// vars ]
+// LiveLog c [
+
+void livelogFlushThreadStart();
+void livelogFlushThreadStop();
+void llogFlush(bool force = false);
+
+pthread_t _threadLiveLogFlush;
+int _threadLiveLogFlushId;
+
+bool _threadLiveLogRunning = false;
+int livelogFlushTimeout = 10; // 10s
+
+static void *_llFlushThread(void *argument)
+{
+    time_t timePrev;
+    time(&timePrev);
+
+    while (_threadLiveLogRunning) {
+        llogFlush(true);
+        sleep(livelogFlushTimeout);
+
+        time_t timeEnd;
+        time(&timeEnd);
+        double timeDiff;
+        timeDiff = difftime(timeEnd, timePrev);
+        timePrev = timeEnd;
+
+//        std::stringstream ss;
+//        ss << timeEnd;
+//        llogLog(L"LLOG/FlushThread", L"Last update", ss.str(), true);
+
+        std::tm * ptm = std::localtime(&timeEnd);
+        char buffer[1024];
+        // Format: Mo, 15.06.2009 20:20:00
+        std::strftime(buffer, 1024, "%a, %d.%m.%Y %H:%M:%S", ptm);
+
+        llogLog(L"LLOG/FlushThread", L"Last update", buffer, true);
+        llogLog(L"LLOG/FlushThread", L"timeDiff", timeDiff);
+    }
+}
+
+void livelogFlushThreadStart()
+{
+    pthread_t thread1;
+
+    _threadLiveLogRunning = true;
+
+    _threadLiveLogFlushId = pthread_create(&_threadLiveLogFlush, NULL, _llFlushThread, (void *) "LiveLog Flush Thread");
+
+    llogLog(L"LLOG/FlushThread", L"FlushThread Started");
+    llogFlush(true);
+}
+
+void livelogFlushThreadStop()
+{
+    _threadLiveLogRunning = false;
+
+    pthread_join(_threadLiveLogFlush, NULL);
+
+    llogLog(L"LLOG/FlushThread", L"FlushThread Stopped");
+    llogFlush(true);
+}
+
+void llogFlush(bool force)
+{
+    pthread_mutex_lock(&_llogMutex);
+    llog->flush(force);
+    pthread_mutex_unlock(&_llogMutex);
+}
+
+// LiveLog c ]
+// utils [
 
 void lazyinit();
 
@@ -80,8 +159,16 @@ void lazyinit()
 //        moveLog(filename, toname);
 
         llog = new LiveLog(filename);
+
+        livelogFlushTimeout = 10;
+        llog->setFlushTimeout(10);
+
         llogLog(L"LLOG/About", liveLoggingBannerShort);
         llogLog(L"LLOG/DUMP", L"Started");
+
+        livelogFlushThreadStart();
+
+        llogFlush(true);
     }
 }
 
@@ -92,6 +179,9 @@ void dumpMessage(std::wstring msg)
     llog->put(msg);
 }
 */
+
+// utils ]
+// LiveLogBasic - old [
 
 void llogBegin(std::wstring path)
 {
@@ -116,6 +206,9 @@ void llogPut(std::wstring msg)
     llog->put(msg);
     pthread_mutex_unlock(&_llogMutex);
 }
+
+// LiveLogBasic - old ]
+// LiveLog common [
 
 void llogLog(std::wstring path, std::wstring msg)
 {
@@ -177,6 +270,9 @@ void llogLog(std::wstring path, std::wstring msg, int i, bool replace)
     ss << msg << " " << i <<"\n";
     llogLogReplace(path, ss.str(), replace);
 }
+
+// LiveLog common ]
+// LiveLog blockchain [
 
 void llogLog(std::wstring path, std::wstring msg, const CBlock &block)
 {
@@ -317,3 +413,4 @@ void llogLog(std::wstring path, std::wstring msg, const void *p, int size, int f
     }
 }
 
+// LiveLog blockchain ]
