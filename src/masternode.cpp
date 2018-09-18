@@ -132,13 +132,22 @@ CMasternode::CollateralStatus CMasternode::CheckCollateral(const COutPoint& outp
         return COLLATERAL_UTXO_NOT_FOUND;
     }
 
-    if(coin.out.nValue != 1000 * COIN) {
+    // m.7.3 mn coins [
+
+    if(coin.out.nValue != MN_COIN) {
+//        if(coin.out.nValue != 1000 * COIN) {
         return COLLATERAL_INVALID_AMOUNT;
     }
 
+    // m.7.3 mn coins ]
+
+    // m.7.4 mn disable script check - todo: review ![
+/*
     if(pubkey == CPubKey() || coin.out.scriptPubKey != GetScriptForDestination(pubkey.GetID())) {
         return COLLATERAL_INVALID_PUBKEY;
     }
+*/
+    // m.7.4 mn disable script check - todo: review !]
 
     nHeightRet = coin.nHeight;
     return COLLATERAL_OK;
@@ -453,8 +462,12 @@ bool CMasternodeBroadcast::Create(const COutPoint& outpoint, const CService& ser
 
     mnbRet = CMasternodeBroadcast(service, outpoint, pubKeyCollateralAddressNew, pubKeyMasternodeNew, PROTOCOL_VERSION);
 
+    // m.8.1 disable ip check [
+    /*
     if (!mnbRet.IsValidNetAddr())
         return Log(strprintf("Invalid IP address, masternode=%s", outpoint.ToStringShort()));
+    */
+    // m.8.1 disable ip check ]
 
     mnbRet.lastPing = mnp;
     if (!mnbRet.Sign(keyCollateralAddressNew))
@@ -473,12 +486,16 @@ bool CMasternodeBroadcast::SimpleCheck(int& nDos)
 
     AssertLockHeld(cs_main);
 
+    // m.8.1 disable ip check [
+    /*
     // make sure addr is valid
     if(!IsValidNetAddr()) {
         LogPrintf("CMasternodeBroadcast::SimpleCheck -- Invalid addr, rejected: masternode=%s  addr=%s\n",
                     outpoint.ToStringShort(), addr.ToString());
         return false;
     }
+    */
+    // m.8.1 disable ip check ]
 
     // make sure signature isn't in the future (past is OK)
     if (sigTime > GetAdjustedTime() + 60 * 60) {
